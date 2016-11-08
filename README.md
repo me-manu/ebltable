@@ -16,10 +16,10 @@ Installation
 
 Download the package, add the path of the repository to your python home variable,
 e.g. by typing (or including in your .bashrc file):
-> export PYTHONPATH="$PYTHONPATH:/path/to/repo:/some/other/path:"
+> export PYTHONPATH="$PYTHONPATH:/path/to/ebltable:/some/other/path:"
 
 To use EBL model files, you have to set the EBL_FILE_PATH environment variable, e.g., by typing 
-> export EBL_FILE_PATH=/path/to/repro/ebl/ebl_model_files
+> export EBL_FILE_PATH=/path/to/ebltable/ebl_model_files
 
 The EBL model files are included in the ebl path. 
 Check the installation by running 

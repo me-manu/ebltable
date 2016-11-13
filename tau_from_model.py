@@ -1,5 +1,5 @@
 """
-Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
+Class to read EBL models
 
 History of changes:
 Version 1.0
@@ -10,11 +10,13 @@ Version 1.0.2
 - 11/7/2011: changed tau and inverse tau to scipy interpolation
 Version 1.0.3
 - 08/06/2012: Implemented array operation for optical depth calculation 
+Version 1.1
+- 11/13/2016: Added writing and reading of fits files
 
 """
 
-__version__ = 1.02
-__author__ = "M. Meyer // manuel.meyer@physik.uni-hamburg.de"
+__version__ = 1.1
+__author__ = "M. Meyer // manuel.meyer@fysik.su.se"
 
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np

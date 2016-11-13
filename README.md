@@ -9,6 +9,7 @@ Prerequisites
 Python 2.7 and newest versions of the following packages:
 - numpy
 - scipy
+- astropy (for fits files)
 - matplotlib
 
 Installation

@@ -23,6 +23,8 @@ from scipy.interpolate import interp1d
 from scipy.integrate import simps
 from scipy.interpolate import RectBivariateSpline as RBSpline
 from scipy.interpolate import UnivariateSpline as USpline
+from astropy.io import fits
+from ebltable import maketablefits as mtfits
 import warnings
 import os
 # ------------------------------------------------------------#
@@ -71,7 +73,7 @@ class OptDepth(object):
 	    self.readfile(file_name = file_name, model = model)
 	return
 
-    def readfile(self, file_name='None',model = 'kneiske', path='/afs/desy.de/user/m/meyerm/projects/blazars/EBLmodelFiles/'):
+    def readfile(self, file_name='None',model = 'kneiske', path=os.environ['HOME']):
 	"""
 	Read in Model file.
 
@@ -154,6 +156,124 @@ class OptDepth(object):
 	self.tauSpline = RBSpline(self.logEGeV,self.z,self.tau,kx=2,ky=2)
 	return
 
+    def readfitsfile(self, filename,tau_ext = 1, z_ext = 2, E_ext = 3):
+	"""
+	Read opacities from a fits file using the astropy.io module
+
+	Parameters
+	----------
+	filename: string, 
+		full path to fits file containing the opacities, redshifts, and energies
+
+	kwargs
+	------
+	tau_ext: int,
+		number of fits file extension containing the opacities as n x m dim array
+		(default: 0)
+	z_ext: int,
+		number of fits file extension containing the redshifts as n-dim array 
+		(default: 1)
+	E_ext: int,
+		number of fits file extension containing the energies in TeV as m-dim array 
+		(default: 2)
+	"""
+	f = fits.open(filename)
+	self.tau = []
+	for l in f[tau_ext].data:
+	    self.tau.append(l[0])
+	self.tau = np.array(self.tau)
+
+	self.z = []
+	for z in f[z_ext].data:
+	    self.z.append(z[0])
+	self.z = np.array(self.z)
+
+	self.logEGeV = []
+	for E in f[E_ext].data:
+	    self.logEGeV.append(np.log10(E[0] * 1e3))
+	self.logEGeV = np.array(self.logEGeV)
+
+	self.tauSpline = RBSpline(self.logEGeV,self.z,self.tau.T,kx=2,ky=2)
+	return 
+
+    def writefitsfile(self,filename, z,ETeV, tau = 'none'):
+	"""
+	Write optical depth to a fits file
+
+	Parameters
+	----------
+	filename: str,
+	     full file path for output fits file
+	z: np.nd-array,
+	     n-dimensional numpy nd-array with redshifts
+	ETeV: np.nd-array ,
+	    m-dimensional numpy nd-array with energies in TeV
+	
+	kwargs
+	------
+	tau: np.nd-array or 'none',
+	    if not 'none', n x m dimensional array with optical depth.
+	    if 'none' use optical depth of current model.
+	"""
+	tables = []
+	tc = []
+	tc.append(mtfits.TableCols())
+	tc.append(mtfits.TableCols())
+	tc.append(mtfits.TableCols())
+	row_dict = {}
+
+	if tau.lower() == 'none':
+	    data = self.opt_depth_array(z,ETeV)
+	else:
+	    data  = tau
+	tc[0].add_col('OptDepth', 
+		dtype = 'f8',
+		description = 'Gamma-ray optical depth',
+		shape = (z.shape[0], ETeV.shape[0]),
+		#unit = unit,
+		format = '%.5e',
+		data = data
+		)
+	tables.append(tc[0].makeTable())
+
+	tc[1].add_col('Redshift', 
+		dtype = 'f8',
+		description = 'Redshift',
+		shape = (z.shape[0]),
+		#unit = unit,
+		format = '%.5e',
+		data = z 
+		)
+	tables.append(tc[1].makeTable())
+	#row_dict['Redshift'] = z
+
+	tc[2].add_col('Energy', 
+		dtype = 'f8',
+		description = 'Gamma-ray energy in TeV',
+		shape = (ETeV.shape[0]),
+		unit = 'TeV',
+		format = '%.5e',
+		data = ETeV 
+		)
+	tables.append(tc[2].makeTable())
+	#row_dict['Energy'] = ETeV
+
+	prihdr = fits.Header()
+	prihdu = fits.PrimaryHDU(header=prihdr)
+	tbhdulist = fits.HDUList([prihdu])
+	hdunames = ['Optical Depth','Redshifts','Energies']
+
+	for it,t in enumerate(tables):
+	    #t.add_row([row_dict[k] for k in tc[it].col_dict.keys()])
+	    tbhdu = mtfits.table_to_fits_table(t)
+	    tbhdu.header.append("EXTNAME")
+	    tbhdu.header['EXTNAME'] = hdunames[it]
+	    tbhdulist.append(tbhdu)
+
+	tbhdulist.writeto(filename, clobber = True)
+
+	return
+
     def opt_depth(self,z,E):
 	"""
 	Return optical depth for redshift z and Engergy (TeV) from BSpline Interpolation
@@ -231,7 +351,7 @@ class OptDepth(object):
 	-------
 	energy, float, log10(E/GeV) 
 	"""
-	Enew = USpline(self.tauSpline(self.logEGeV,z)[:,0],self.logEGeV, s = 0, k = 2, ext = 'extrapolate')
+	Enew = USpline(self.tauSpline(self.logEGeV,z)[:,0],self.logEGeV, s = 0, k = 1, ext = 'extrapolate')
 	return Enew(tau)
 
     def opt_depth_Ebin(self,z,Ebin,func,params,Esteps = 50):
@@ -242,7 +362,7 @@ class OptDepth(object):
 	----------
 	z:	float, redshift
 	Ebin:	n-dim array with Energy bin boundaries in TeV
-	func:	function for spectrum, needs to be of the form func(params,Energy [TeV]), needs to except 2xn dim arrays
+	func:	function for spectrum, needs to be of the form func(Energy [TeV], **params), needs to except 2xn dim arrays
 	params:	parameters that are past to func
 
 	kwargs

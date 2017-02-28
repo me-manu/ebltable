@@ -2,15 +2,14 @@ ebltable
 ========
 
 Python packages to read in and interpolate tables for the photon density of the Extragalactic Background Light (EBL)
-and the resulting opacity for high energy gamma rays.
+and the resulting opacity for high energy gamma rays. EBL Tables will be coming soon!
 
 Prerequisites
 -------------
 Python 2.7 and newest versions of the following packages:
 - numpy
 - scipy
-- astropy (for fits files)
-- matplotlib
+- astropy 
 
 Installation
 ------------

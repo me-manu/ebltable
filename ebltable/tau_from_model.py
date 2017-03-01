@@ -1,8 +1,6 @@
 """
 Class to read gamma-ray absorption from EBL models
 """
-__version__ = '0.1.0'
-__author__ = 'Manuel Meyer'
 
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np
@@ -132,6 +130,8 @@ class OptDepth(object):
 		file_name = os.path.join(ebl_file_path, 'tau_lower_dominguez11_cta.out')
 	    elif model == 'finke':
 		file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
+	    else:
+		raise ValueError("Unknown EBL model chosen!")
 
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
@@ -159,6 +159,8 @@ class OptDepth(object):
 		file_name = os.path.join(ebl_file_path , 'tau_gg_low_pop3.dat')
 	    elif model == 'inoue-up-pop3':
 		file_name = os.path.join(ebl_file_path , 'tau_gg_up_pop3.dat')
+	    else:
+		raise ValueError("Unknown EBL model chosen!")
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
 	    tau = data[1:,1:]
@@ -169,6 +171,8 @@ class OptDepth(object):
 		file_name = os.path.join(ebl_file_path , 'opdep_fiducial.dat')
 	    elif model == 'gilmore-fixed':
 		file_name = os.path.join(ebl_file_path , 'opdep_fixed.dat')
+	    else:
+		raise ValueError("Unknown EBL model chosen!")
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
 	    tau = data[1:,1:]

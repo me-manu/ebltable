@@ -2,7 +2,7 @@
 #recursive-include docs/_build/html *
 
 #data files for ebl models
-include data/*
+include ebltable/data/*
 
 #example files
 include examples/example*.py

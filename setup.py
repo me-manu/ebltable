@@ -13,7 +13,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.1.2',
+    version='0.1.3',
     include_package_data = True,
     package_data={'ebltable': ['data/*'], },
 
@@ -43,7 +43,7 @@ setup(
     keywords=['extragalactic backgroun light', 'Fermi', 'IACT', 'EBL', 'gamma-ray',
 		'absorption', 'opacity', 'LIV', 'Lorentz invariance violation'],
 
-    packages = find_packages(exclude=['build', 'docs', 'templates'])
+    packages = find_packages(exclude=['build', 'docs', 'templates']),
 
     
     install_requires=[

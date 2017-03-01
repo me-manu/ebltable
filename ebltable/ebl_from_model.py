@@ -2,9 +2,6 @@
 Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
 """
 
-__version__ = '0.1.0'
-__author__ = 'Manuel Meyer'
-
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np
 import os

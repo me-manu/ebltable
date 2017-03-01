@@ -15,7 +15,9 @@ Installation
 ------------
 
 You can use pip to install the package,
->>> pip install ebltable
+```
+pip install ebltable
+```
 
 Example scripts and notebooks are provided on the github page in the example/ and notebooks/ folder,
 https://github.com/me-manu/ebltable

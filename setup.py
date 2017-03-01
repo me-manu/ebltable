@@ -50,7 +50,7 @@ setup(
     install_requires=[
         'numpy >= 1.6',
         'scipy',
-        'astropy>=1.3',
+        'astropy>=1.2.1',
     ]
 
 )

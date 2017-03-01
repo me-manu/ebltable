@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages 
 from codecs import open
 from os import path
+from ebltable.version import __version__
 
 here = path.abspath(path.dirname(__file__))
 
@@ -13,7 +14,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.1.3',
+    version=__version__,
     include_package_data = True,
     package_data={'ebltable': ['data/*'], },
 

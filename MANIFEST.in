@@ -10,4 +10,4 @@ include notebooks/example*.ipynb
 
 #Misc
 include LICENSE
-include README.md
+include README.rst

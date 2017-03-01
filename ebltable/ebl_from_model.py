@@ -1,15 +1,6 @@
 """
 Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
-
-History of changes:
-Version 0.01
-- Created 29th October 2012
-Version 0.02
-- 7th March: added inoue z = 0 EBL
 """
-
-__version__ = 0.02
-__author__ = "M. Meyer // manuel.meyer@physik.uni-hamburg.de"
 
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np

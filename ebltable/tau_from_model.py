@@ -1,28 +1,6 @@
 """
-Class to read EBL models
-
-History of changes:
-Version 0.1
-- Created 22nd September 2011
-Version 0.2
-- added inverse tau function to return energy, 27nd September 2011
-Version 0.3
-- 11/7/2011: changed tau and inverse tau to scipy interpolation
-Version 0.4
-- 08/06/2012: Implemented array operation for optical depth calculation 
-Version 0.5
-- 11/13/2016: Added writing and reading of fits files
-Version 0.6
-- 02/28/2017: Added static methods to initiate class with readfits, readascii and readmodel
-- 02/28/2017: Added properties
-- 02/28/2017: Replaced the opt_depth function with opt_depth_array 
-- 02/28/2017: Included writing and reading to fits files with
-Astropy Table environment
+Class to read gamma-ray absorption from EBL models
 """
-
-__version__ = 0.6
-__author__ = "M. Meyer // mameyer@stanford.edu"
-
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np
 from scipy.integrate import simps
@@ -30,7 +8,7 @@ from scipy.interpolate import RectBivariateSpline as RBSpline
 from scipy.interpolate import UnivariateSpline as USpline
 from astropy.io import fits
 from astropy.table import Table,Column
-from astropy import units as u
+import astropy.units as u
 import warnings
 import os
 # ------------------------------------------------------------#
@@ -54,6 +32,24 @@ class OptDepth(object):
     def __init__(self, z, EGeV, tau,kx = 2, ky = 2):
 	"""
 	Initiate Optical depth model class. 
+
+	Parameters
+	----------
+	z: `~numpy.ndarray` or list
+	    source redshift, m-dimensional
+
+	EGeV: `~numpy.ndarray` or list
+	    Energies in GeV, n-dimensional
+
+	tau: `~numpy.ndarray` or list
+	    n x m array with optical depth values
+
+	{options}
+
+	kx: int
+	    order of interpolation spline along energy axis, default: 2
+	ky: int
+	    order of interpolation spline along energy axis, default: 2
 	"""
 
 	self._z = np.array(z)
@@ -102,11 +98,6 @@ class OptDepth(object):
 	model:		str, 
 			EBL model to use.
 			Currently supported models are listed in Notes Section
-	kx:	int, optional, default = 2, 
-		order of the spline in x direction.
-	ky:	int, optional, default = 2, 
-		order of the spline in y direction.
-
 	Notes
 	-----
 	Supported EBL models:
@@ -121,8 +112,7 @@ class OptDepth(object):
 	try:
 	    ebl_file_path = os.environ['EBL_FILE_PATH']
 	except KeyError:
-	    warnings.warn("The EBL File environment variable is not set! Using {0:s} as path instead.".format(
-			    path), RuntimeWarning)
+	    warnings.warn("The EBL File environment variable is not set!", RuntimeWarning)
 	    raise KeyError
 
 	if model == 'kneiske' or model == 'dominguez' or model == 'finke':
@@ -147,8 +137,8 @@ class OptDepth(object):
 	    data = np.loadtxt(file_name,usecols=(0,2))
 	    EGeV = data[0:50,0]*1e3
 	    tau = np.zeros((len(EGeV),len(data[:,1])/len(EGeV)))
-	    z = np.zeros((len(data[:,1])/len(self.logEGeV),))
-	    for i in range(len(data[:,1])/len(self.logEGeV)):
+	    z = np.zeros((len(data[:,1])/len(EGeV),))
+	    for i in range(len(data[:,1])/len(EGeV)):
 		tau[:,i] = data[i*50:i*50+50,1]
 		z[i] += 1e-3*(i+1.)
 
@@ -184,10 +174,6 @@ class OptDepth(object):
 			first row contains the redshift values. 
 			The remaining values are the tau values. 
 			The [0,0] entry will be ignored.
-	kx:	int, optional, default = 2, 
-		order of the spline in x direction.
-	ky:	int, optional, default = 2, 
-		order of the spline in y direction.
 	"""
 	data = np.loadtxt(file_name)
 	z = data[0,1:]
@@ -221,7 +207,7 @@ class OptDepth(object):
 	taucol: str, optional,
 		name of column of `~astropy.Table` with optical depth values
 	ecol: str, optional,
-		name of column of `~astropy.Table` with energy depth values
+		name of column of `~astropy.Table` with energy values
 	"""
 	t = Table.read(file_name, hdu = hdu_tau_vs_z)
 	z = t[zcol].data
@@ -239,10 +225,11 @@ class OptDepth(object):
 	----------
 	filename: str,
 	     full file path for output fits file
-	z: np.nd-array,
-	     n-dimensional numpy nd-array with redshifts
-	ETeV: np.nd-array ,
-	    m-dimensional numpy nd-array with energies in TeV
+	z: `~numpy.ndarray` or list
+	    source redshift, m-dimensional
+
+	ETeV: `~numpy.ndarray` or list
+	    Energies in TeV, n-dimensional
 	"""
 	t = Table([z,self.opt_depth(z,ETeV)], names = ('REDSHIFT', 'OPT_DEPTH'))
 	t2 = Table()
@@ -262,14 +249,15 @@ class OptDepth(object):
 
 	Parameters
 	----------
-	z: redshift
-	    scalar or N-dim numpy array
-	ETeV: Energy in TeV
-	    scalar or M-dim numpy array
+	z: `~numpy.ndarray` or list
+	    source redshift, m-dimensional
+
+	ETeV: `~numpy.ndarray` or list
+	    Energies in TeV, n-dimensional
 
 	Returns
 	-------
-	(N x M)-np.array with corresponding optical depth values.
+	(N x M) `~numpy.ndarray` with corresponding optical depth values.
 	If z or E are scalars, the corresponding axis will be squezed.
 
 	Notes
@@ -330,8 +318,8 @@ class OptDepth(object):
 	----------
 	z:	float, 
 		redshift
-	Ebin:	n-dim array
-		Energy bin boundaries in TeV
+	Ebin: 	`~numpy.ndarray` or list
+		Energies of bin bounds in TeV, n-dimensional
 	func:	function pointer
 		Spectrum, needs to be of the form func(Energy [TeV], **params), 
 		needs to except 2xn dim arrays
@@ -345,7 +333,7 @@ class OptDepth(object):
 
 	Returns
 	-------
-	(n-1)-dim array with average tau values for each energy bin.
+	(n-1)-dim `~numpy.ndarray` with average tau values for each energy bin.
 
 	Notes
 	-----

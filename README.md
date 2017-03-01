@@ -24,4 +24,4 @@ https://github.com/me-manu/ebltable
 
 License
 -------
-eblstud is distributed under the modified BSD License.
+ebltable is distributed under the modified BSD License.

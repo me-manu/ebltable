@@ -1,1 +1,1 @@
-__all__ = ['ebl_from_model','tau_from_model','maketablefits']
+__all__ = ['ebl_from_model','tau_from_model']

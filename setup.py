@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages 
 from codecs import open
 from os import path
-from ebltable.version import get_git_version
 
 here = path.abspath(path.dirname(__file__))
 
@@ -14,10 +13,11 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version=get_git_version(),
+    version='0.1.2',
     include_package_data = True,
+    package_data={'ebltable': ['data/*'], },
 
-    description='Python code to read in and interpolate tables for absorption of high energy gamma rays',
+    description='Python code to read in and interpolate tables for absorption of high energy gamma rays with additional helper functions',
     long_description=long_description,  #this is the
 
     # The project's main homepage.
@@ -40,8 +40,16 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='extagalactic background light EBL gamma rays',
+    keywords=['extragalactic backgroun light', 'Fermi', 'IACT', 'EBL', 'gamma-ray',
+		'absorption', 'opacity', 'LIV', 'Lorentz invariance violation'],
 
     packages = find_packages(exclude=['build', 'docs', 'templates'])
+
+    
+    install_requires=[
+        'numpy >= 1.6',
+        'scipy',
+        'astropy>=1.3',
+    ]
 
 )

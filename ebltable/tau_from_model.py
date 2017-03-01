@@ -1,6 +1,9 @@
 """
 Class to read gamma-ray absorption from EBL models
 """
+__version__ = '0.1.0'
+__author__ = 'Manuel Meyer'
+
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np
 from scipy.integrate import simps
@@ -29,6 +32,8 @@ class OptDepth(object):
     logEGeV:	log10 energy in GeV, n-dim numpy array, given by model file
     tau:	nxm - dim array with optical depth values, given by model file
     """
+    
+
     def __init__(self, z, EGeV, tau,kx = 2, ky = 2):
 	"""
 	Initiate Optical depth model class. 
@@ -106,22 +111,27 @@ class OptDepth(object):
 		kneiske		Kneiske & Dole (2010)
 		finke		Finke et al. (2012)		http://www.phy.ohiou.edu/~finke/EBL/
 		dominguez	Dominguez et al. (2011)
+		dominguez-upper	Dominguez et al. (2011) upper uncertainty
+		dominguez-lower	Dominguez et al. (2011) lower uncertainty
 		inuoe		Inuoe et al. (2013)		http://www.slac.stanford.edu/~yinoue/Download.html
+		inuoe-low-pop3  Inuoe et al. (2013)		(low pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
+		inuoe-up-pop3   baseline  Inuoe et al. (2013)   (up pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
 		gilmore		Gilmore et al. (2012)		(fiducial model)
+		gilmore-fixed   Gilmore et al. (2012)		(fixed model)
 	"""
-	try:
-	    ebl_file_path = os.environ['EBL_FILE_PATH']
-	except KeyError:
-	    warnings.warn("The EBL File environment variable is not set!", RuntimeWarning)
-	    raise KeyError
+	ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
-	if model == 'kneiske' or model == 'dominguez' or model == 'finke':
+	if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke':
 	    if model == 'kneiske':
-		file_name = os.path.join(ebl_file_path , 'tau_ebl_cmb_kneiske.dat')
-	    if model == 'dominguez':
-		file_name = os.path.join(ebl_file_path , 'tau_dominguez10.dat')
-	    if model == 'finke':
-		file_name = os.path.join(ebl_file_path , 'tau_modelC_Finke.txt')
+		file_name = os.path.join(ebl_file_path, 'tau_ebl_cmb_kneiske.dat')
+	    elif model == 'dominguez':
+		file_name = os.path.join(ebl_file_path, 'tau_dominguez11_cta.out')
+	    elif model == 'dominguez-upper':
+		file_name = os.path.join(ebl_file_path, 'tau_upper_dominguez11_cta.out')
+	    elif model == 'dominguez-lower':
+		file_name = os.path.join(ebl_file_path, 'tau_lower_dominguez11_cta.out')
+	    elif model == 'finke':
+		file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
 
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
@@ -142,15 +152,23 @@ class OptDepth(object):
 		tau[:,i] = data[i*50:i*50+50,1]
 		z[i] += 1e-3*(i+1.)
 
-	elif model == 'inoue':
-	    file_name = os.path.join(ebl_file_path , 'tau_gg_baseline.dat')
+	elif model.find('inoue') >= 0:
+	    if model == 'inoue':
+		file_name = os.path.join(ebl_file_path , 'tau_gg_baseline.dat')
+	    elif model == 'inoue-low-pop3':
+		file_name = os.path.join(ebl_file_path , 'tau_gg_low_pop3.dat')
+	    elif model == 'inoue-up-pop3':
+		file_name = os.path.join(ebl_file_path , 'tau_gg_up_pop3.dat')
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
 	    tau = data[1:,1:]
 	    EGeV = data[1:,0]*1e3
 
-	elif model == 'gilmore':
-	    file_name = os.path.join(ebl_file_path , 'opdep_fiducial.dat')
+	elif model.find('gilmore') >= 0:
+	    if model == 'gilmore':
+		file_name = os.path.join(ebl_file_path , 'opdep_fiducial.dat')
+	    elif model == 'gilmore-fixed':
+		file_name = os.path.join(ebl_file_path , 'opdep_fixed.dat')
 	    data = np.loadtxt(file_name)
 	    z = data[0,1:]
 	    tau = data[1:,1:]

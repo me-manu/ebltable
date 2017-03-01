@@ -2,6 +2,9 @@
 Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
 """
 
+__version__ = '0.1.0'
+__author__ = 'Manuel Meyer'
+
 # ---- IMPORTS -----------------------------------------------#
 import numpy as np
 import os
@@ -106,29 +109,42 @@ class EBL(object):
 		franceschini	Franceschini et al. (2008)	http://www.astro.unipd.it/background/
 		kneiske		Kneiske & Dole (2010)
 		dominguez	Dominguez et al. (2011)
+		dominguez-upper	Dominguez et al. (2011) upper uncertainty
+		dominguez-lower	Dominguez et al. (2011) lower uncertainty
+		inuoe           Inuoe et al. (2013)	 	(baseline) http://www.slac.stanford.edu/~yinoue/Download.html
+		inuoe-low-pop3  Inuoe et al. (2013)		(low pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
+		inuoe-up-pop3   baseline  Inuoe et al. (2013)   (up pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
 		inuoe		Inuoe et al. (2013)		http://www.slac.stanford.edu/~yinoue/Download.html
 		gilmore		Gilmore et al. (2012)		(fiducial model)
-		finke		Finke et al. (2012)		http://www.phy.ohiou.edu/~finke/EBL/
+		gilmore-fixed   Gilmore et al. (2012)		(fixed model)
+		finke		Finke et al. (2012)		(model C) http://www.phy.ohiou.edu/~finke/EBL/
 		cuba		Haardt & Madua (2012)		http://www.ucolick.org/~pmadau/CUBA/HOME.html
 	"""
-	try:
-	    ebl_file_path = os.environ['EBL_FILE_PATH']
-	except KeyError:
-	    warnings.warn("The EBL File environment variable is not set!", RuntimeWarning)
-	    raise KeyError
-
+	ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
 	if model == 'kneiske':
 	    file_name = join(ebl_file_path , 'ebl_nuFnu_tanja.dat')
 	elif model == 'franceschini':
 	    file_name = join(ebl_file_path , 'ebl_franceschini.dat')
 	elif model == 'dominguez':
-	    file_name = join(ebl_file_path , 'ebl_dominguez.dat')
+	    file_name = join(ebl_file_path , 'ebl_dominguez11.out')
+	elif model == 'dominguez-upper':
+	    file_name = join(ebl_file_path , 'ebl_upper_uncertainties_dominguez11.out')
+	elif model == 'dominguez-lower':
+	    file_name = join(ebl_file_path , 'ebl_lower_uncertainties_dominguez11.out')
 	elif model == 'inoue':
 	    file_name = join(ebl_file_path , 'EBL_z_0_baseline.dat')
-	    warnings.warn("Inoue model is only provided for z = 0!",RuntimeWarning)
+	    #file_name = join(ebl_file_path , 'EBL_proper_baseline.dat')
+	elif model == 'inoue-low-pop3':
+	    file_name = join(ebl_file_path , 'EBL_z_0_low_pop3.dat')
+	    #file_name = join(ebl_file_path , 'EBL_proper_low_pop3.dat')
+	elif model == 'inoue-up-pop3':
+	    file_name = join(ebl_file_path , 'EBL_z_0_up_pop3.dat')
+	    #file_name = join(ebl_file_path , 'EBL_proper_up_pop3.dat')
 	elif model == 'gilmore':
 	    file_name = join(ebl_file_path , 'eblflux_fiducial.dat')
+	elif model == 'gilmore-fixed':
+	    file_name = join(ebl_file_path , 'eblflux_fixed.dat')
 	elif model == 'cuba':
 	    file_name = join(ebl_file_path , 'CUBA_UVB.dat')
 	elif model == 'finke':
@@ -137,12 +153,15 @@ class EBL(object):
 	    raise ValueError("Unknown EBL model chosen!")
 
 	data = np.loadtxt(file_name)
-	if model == 'inoue':
+	if model.find('inoue') >= 0:
 	    z = np.array([0.])
+	    #z = data[0,1:]
+	    #nuInu = data[:,1]
 	    lmu = data[:,0]
-	    nuInu = data[:,1]
+	    nuInu = np.array([data[:,1]]).T
+	    raise ValueError('Inoue models not correctly implemented at the moment, choose another model')
 
-	elif model == 'gilmore':
+	elif model.find('gilmore') >= 0:
 	    z = data[0,1:]
 	    lmu = data[1:,0] * 1e-4 # convert from Angstrom to micro meter
 	    nuInu = data[1:,1:]			
@@ -161,7 +180,7 @@ class EBL(object):
 	    nuInu[idx] = np.ones(np.sum(nuInu == 0.)) * 1e-20
 
 	    # in erg / cm^2 / s / sr
-	    nuInu = (nuInu.T * SI_c / (lmu * 1e-6)).T	
+	    nuInu = (nuInu.T * c.c.value / (lmu * 1e-6)).T	
 	    nuInu *= 1e6	# in nW / m^2 /  sr
 
 	    # check where lmu is not strictly increasing

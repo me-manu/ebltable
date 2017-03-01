@@ -14,18 +14,11 @@ Python 2.7 and newest versions of the following packages:
 Installation
 ------------
 
-Download the package, add the path of the repository to your python home variable,
-e.g. by typing (or including in your .bashrc file):
-> export PYTHONPATH="$PYTHONPATH:/path/to/ebltable:/some/other/path:"
+You can use pip to install the package,
+> pip install ebltable
 
-To use EBL model files, you have to set the EBL_FILE_PATH environment variable, e.g., by typing 
-> export EBL_FILE_PATH=/path/to/ebltable/ebl_model_files
-
-The EBL model files are included in the ebl path. 
-Check the installation by running 
-> python example.py
-
-The script is heavily commented to explain its use.
+Example scripts and notebooks are provided on the github page in the example/ and notebooks/ folder,
+https://github.com/me-manu/ebltable
 
 License
 -------

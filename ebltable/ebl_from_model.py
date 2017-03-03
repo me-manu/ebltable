@@ -8,13 +8,31 @@ import os
 from scipy.interpolate import RectBivariateSpline as RBSpline
 from scipy.interpolate import UnivariateSpline as USpline
 from astropy.io import fits
-from astropy.table import Table,Column
+from astropy.table import Table,Column 
 from scipy.integrate import simps
 import warnings
 from os.path import join
 import astropy.units as u
 import astropy.constants as c
+from astropy.cosmology import Planck15 as cosmo
+from scipy.special import spence # equals gsl_sf_dilog(1-z)
+
 # ------------------------------------------------------------#
+def Pkernel(x):
+    """Kernel function from Biteau & Williams (2015), Eq. (7)"""
+
+    m = (x < 0.) & (x >= 1.)
+    x[x < 0.] = np.zeros(np.sum(x < 0.))
+    x[x >= 1.] = np.zeros(np.sum(x >= 1.))
+    x = np.sqrt(x)
+
+    result = np.log(2.) * np.log(2.)  - np.pi *np.pi / 6. \
+	    + 2. * spence(0.5 + 0.5 * x) - (x + x*x*x) / (1. - x*x) \
+	    + (np.log(1. + x) - 2. * np.log(2.)) * np.log(1. - x) \
+	    + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
+	    + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
+    result[x <= 0.] = np.zeros(np.sum(x <= 0.))
+    return result
 
 class EBL(object):
     """
@@ -26,7 +44,7 @@ class EBL(object):
     Arguments
     ---------
     z:		redshift, m-dim numpy array, given by model file
-    logl:	log wavelength, n-dim numpy array, given by model file, in mu m
+    loglmu:	log wavelength, n-dim numpy array, given by model file, in mu m
     nuInu:	nxm - dim array with EBL intensity in nW m^-2 sr^-1, given by model file
     """
 
@@ -333,10 +351,10 @@ class EBL(object):
 
 	Parameters
 	----------
-	z: `~numpy.ndarray` or list
+	z: `~numpy.ndarray` or list or tuple
 	    source redshift, n-dimensional
 
-	EeV: `~numpy.ndarray` or list
+	EeV: `~numpy.ndarray` or list or tuple
 	    Energies in eV, m-dimensional
 
 	Returns
@@ -349,11 +367,11 @@ class EBL(object):
 	"""
 	if np.isscalar(EeV):
 	    EeV = np.array([EeV])
-	elif type(EeV) == list:
+	elif type(EeV) == list or type(EeV) == tuple:
 	    EeV = np.array(EeV)
 	if np.isscalar(z):
 	    z = np.array([z])
-	elif type(z) == list:
+	elif type(z) == list or type(z) == tuple:
 	    z = np.array(z)
 
 	# convert energy in eV to wavelength in micron
@@ -396,3 +414,158 @@ class EBL(object):
 	ln_Il = np.log(10.) * (self.ebl_array(z,10.**logl)) 	# note: nuInu = lambda I lambda
 	result = simps(ln_Il,lnl)
 	return result
+
+    def optical_depth(self,z0,ETeV,
+			#OmegaM = cosmo.Om0, OmegaL = 1. - cosmo.Om0, 
+			OmegaM = 0.7, OmegaL = 0.3, 
+			H0 = cosmo.H0.value, 
+			steps_z = 50,
+			steps_e = 50,
+			egamma_LIV = True,
+			LIV_scale = 0., nLIV=1):
+	"""
+	calculates mean free path for gamma-ray energy ETeV at redshift z
+
+	Parameters
+	----------
+	z0:	float 
+		source redshift
+	ETeV:   `~numpy.ndarray` or list or tuple
+		Energies in TeV, n-dimensional
+
+	{options}
+
+	H0 :	    float,
+	            Hubble constant in km / Mpc / s. Default: Planck 2015 result
+	OmegaM :    float,
+	            critical density of matter at z=0. Default: Planck 2015 result
+	OmegaL :    float,
+	            critical density of dark energy. Default: 0
+
+	steps_z :   int
+		    intergration steps for redshift (default : 50)
+	steps_e:    int
+		    number of integration steps for integration over EBL density (default: 60)
+		
+	LIV_scale:  float 
+		    Lorentz invariance violation parameter (quantum gravity scale), 
+		    if 0. (default), do not include LIV
+	nLIV:	    int 
+		    order of LIV, only applied if LIV_scale > 0, default: 1
+	egamma_LIV: bool
+		    if true, apply LIV to both electrons and photons
+
+
+	Returns
+	-------
+	n-dim `~numpy.ndarray` with optical depth values
+
+	Notes
+	-----
+	For calculation, see e.g.
+	See Dwek & Krennrich 2013 or Mirizzi & Montanino 2009
+	"""
+	if np.isscalar(ETeV):
+	    ETeV = np.array([ETeV])
+	elif type(ETeV) == list or type(ETeV) == tuple:
+	    ETeV = np.array(ETeV)
+
+	H0 = (H0 * cosmo.H0.unit).to('1 / s').value # convert from km / Mpc / s to 1 / s
+
+	z_array = np.linspace(0.,z0,steps_z)
+	result = self.mean_free_path(z_array,ETeV,
+					    LIV_scale = LIV_scale,
+					    nLIV = nLIV, 
+					    egamma_LIV = egamma_LIV,
+					    steps_e = steps_e)
+	zz = np.meshgrid(z_array, ETeV)[0]
+	result = 1. / (result * u.Mpc).to(u.cm).value # this is in cm^-1
+	result *= 1./ ( (1. + zz ) * np.sqrt((1.+ zz )**3. * OmegaM + OmegaL) )	# dt / dz for a flat universe
+	result = simps(result,zz, axis = 1)
+	return result * c.c.to('cm / s').value /  H0
+
+
+	#return  result * 1e9 * yr2sec * c.c.to('cm / s').value /  H0
+	return  
+    def mean_free_path(self,z,ETeV,
+    			steps_e = 50,
+			LIV_scale = 0., nLIV=1, 
+			egamma_LIV=True):
+	"""
+	calculates mean free path in Mpc for gamma-ray energy ETeV at redshift z
+
+	z:      `~numpy.ndarray` or list or tuple
+		redshift, n-dimensional
+	ETeV:   `~numpy.ndarray` or list or tuple
+		Energies in TeV, m-dimensional
+
+	{options}
+
+	steps_e:    int
+		    number of integration steps for integration over EBL density (default: 60)
+	LIV_scale:  float 
+		    Lorentz invariance violation parameter (quantum gravity scale), 
+		    if 0. (default), do not include LIV
+	nLIV:	    int 
+		    order of LIV, only applied if LIV_scale > 0, default: 1
+	egamma_LIV: bool
+		    if true, apply LIV to both electrons and photons
+
+
+	Returns
+	-------
+	mxn-dim `~numpy.ndarray` with mean free path values in Mpc
+	if m or n == 1, the axis will be squeezed, i.e. dropped.
+
+	Notes
+	-----
+	For calculation, see e.g.
+	see Dwek & Krennrich 2013 or Mirizzi & Montanino 2009.
+	For kernel see Biteau & Williams 2015
+	"""
+	if np.isscalar(ETeV):
+	    ETeV = np.array([ETeV])
+	elif type(ETeV) == list or type(ETeV) == tuple:
+	    ETeV = np.array(ETeV)
+	if np.isscalar(z):
+	    z = np.array([z])
+	elif type(z) == list or type(z) == tuple:
+	    z = np.array(z)
+
+	# planck mass in eV
+	Mpl_eV = (np.sqrt(c.hbar * c.c / c.G) * c.c**2.).to('eV').value
+	# electron mass in eV
+	m_e_eV = (c.m_e * c.c**2.).to('eV').value
+
+	# max energy of EBL template in eV
+	emax_eV		= (c.h * c.c / (10.**np.min(self.loglmu) * u.um)).to('eV').value 
+
+	# defines the effective energy scale for the LIV modification
+	if LIV_scale:
+	    ELIV_eV = 4.*m_e_eV* m_e_eV * (LIV_scale * Mpl_eV)**nLIV
+	    if egamma_LIV:
+		ELIV_eV /= 1. - 2.**(-nLIV)
+	    ELIV_eV = ELIV_eV ** (1./(2.+nLIV))
+
+	# make z, ETeV to 2d arrays
+	zz, EE_TeV = np.meshgrid(z,ETeV) # m x n dimensional
+	EEzz_eV = EE_TeV * 1e12 * (1. + zz)
+	ethr_eV = m_e_eV * m_e_eV / EEzz_eV
+	if LIV_scale:
+	    ethr_eV	*= 1.+ (EEzz_eV/ELIV_eV)**(nLIV+2.)
+
+	b3d_array = np.ones(ethr_eV.shape + (steps_e,)) * 1e-40
+	e3d_array = np.ones(ethr_eV.shape + (steps_e,)) * 1e-40
+	n3d_array = np.ones(ethr_eV.shape + (steps_e,)) * 1e-40
+
+	for i in range(ethr_eV.shape[0]): # loop over ETeV dimension
+	    for j in range(ethr_eV.shape[1]): #loop over z dimension
+		if ethr_eV[i,j] < emax_eV:
+		    e3d_array[i,j] =  np.logspace(np.log10(ethr_eV[i,j]), np.log10(emax_eV), steps_e)
+		    b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
+		    #b3d_array.mask[i,j] = np.zeros(steps_e, dtype = np.bool)
+		    n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
+
+	kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
+	result = simps(kernel, np.log(e3d_array), axis = 2)
+	return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value

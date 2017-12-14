@@ -32,6 +32,7 @@ def Pkernel(x):
 	    + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
 	    + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
     result[x <= 0.] = np.zeros(np.sum(x <= 0.))
+    result[x >= 1.] = np.zeros(np.sum(x >= 1.))
     return result
 
 class EBL(object):
@@ -417,8 +418,8 @@ class EBL(object):
 
     def optical_depth(self,z0,ETeV,
 			#OmegaM = cosmo.Om0, OmegaL = 1. - cosmo.Om0, 
-			OmegaM = 0.7, OmegaL = 0.3, 
-			H0 = cosmo.H0.value, 
+			OmegaM = 0.3, OmegaL = 0.7, 
+			H0 = 70., #cosmo.H0.value, 
 			steps_z = 50,
 			steps_e = 50,
 			egamma_LIV = True,
@@ -436,11 +437,11 @@ class EBL(object):
 	{options}
 
 	H0 :	    float,
-	            Hubble constant in km / Mpc / s. Default: Planck 2015 result
+	            Hubble constant in km / Mpc / s. Default: 70.
 	OmegaM :    float,
-	            critical density of matter at z=0. Default: Planck 2015 result
+	            critical density of matter at z=0. Default: 0.3
 	OmegaL :    float,
-	            critical density of dark energy. Default: 0
+	            critical density of dark energy. Default: 0.7
 
 	steps_z :   int
 		    intergration steps for redshift (default : 50)
@@ -470,23 +471,25 @@ class EBL(object):
 	elif type(ETeV) == list or type(ETeV) == tuple:
 	    ETeV = np.array(ETeV)
 
-	H0 = (H0 * cosmo.H0.unit).to('1 / s').value # convert from km / Mpc / s to 1 / s
 
 	z_array = np.linspace(0.,z0,steps_z)
 	result = self.mean_free_path(z_array,ETeV,
-					    LIV_scale = LIV_scale,
-					    nLIV = nLIV, 
-					    egamma_LIV = egamma_LIV,
-					    steps_e = steps_e)
-	zz = np.meshgrid(z_array, ETeV)[0]
-	result = 1. / (result * u.Mpc).to(u.cm).value # this is in cm^-1
+					LIV_scale = LIV_scale,
+					nLIV = nLIV, 
+					egamma_LIV = egamma_LIV,
+					steps_e = steps_e)
+
+
+	zz,ee = np.meshgrid(z_array, ETeV, indexing = 'ij')
+	result = 1. / (result.T * u.Mpc).to(u.cm).value # this is in cm^-1
 	result *= 1./ ( (1. + zz ) * np.sqrt((1.+ zz )**3. * OmegaM + OmegaL) )	# dt / dz for a flat universe
-	result = simps(result,zz, axis = 1)
-	return result * c.c.to('cm / s').value /  H0
 
+	result = simps(result,zz, axis = 0)
 
-	#return  result * 1e9 * yr2sec * c.c.to('cm / s').value /  H0
-	return  
+	H0 = (H0 * cosmo.H0.unit).to('1 / s').value # convert from km / Mpc / s to 1 / s
+
+	return  result * c.c.to('cm / s').value /  H0
+
     def mean_free_path(self,z,ETeV,
     			steps_e = 50,
 			LIV_scale = 0., nLIV=1, 
@@ -520,8 +523,7 @@ class EBL(object):
 	Notes
 	-----
 	For calculation, see e.g.
-	see Dwek & Krennrich 2013 or Mirizzi & Montanino 2009.
-	For kernel see Biteau & Williams 2015
+	see Dwek & Krennrich 2013 or Mirizzi & Montanino 2009.  For kernel see Biteau & Williams 2015
 	"""
 	if np.isscalar(ETeV):
 	    ETeV = np.array([ETeV])
@@ -567,5 +569,21 @@ class EBL(object):
 		    n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
 
 	kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
-	result = simps(kernel, np.log(e3d_array), axis = 2)
+	result = simps(kernel, np.log(e3d_array), axis = 2) * (1. + zz) * (1. + zz) * (1. + zz)
+
+	result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40
+
+	#result = np.zeros_like(ethr_eV)
+
+	#for i in range(ethr_eV.shape[0]): # loop over ETeV dimension
+	#    for j in range(ethr_eV.shape[1]): #loop over z dimension
+	#	if ethr_eV[i,j] < emax_eV:
+	#	    e3d_array[i,j] =  np.logspace(np.log10(ethr_eV[i,j]), np.log10(emax_eV), steps_e)
+	#	    b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
+	#	    #b3d_array.mask[i,j] = np.zeros(steps_e, dtype = np.bool)
+	#	    n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
+	#	    kernel = b3d_array[i,j] * b3d_array[i,j] * n3d_array[i,j] * Pkernel(1. - b3d_array[i,j]) * e3d_array[i,j]
+	#	    result[i,j] = simps(kernel, np.log(e3d_array[i,j]))
+	#result *= (1. + zz) * (1. + zz) * (1. + zz)
+
 	return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value

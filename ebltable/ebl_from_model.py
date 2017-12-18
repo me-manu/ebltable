@@ -49,7 +49,7 @@ class EBL(object):
     nuInu:	nxm - dim array with EBL intensity in nW m^-2 sr^-1, given by model file
     """
 
-    def __init__(self, z, lmu, nuInu, kx = 2, ky = 2):
+    def __init__(self, z, lmu, nuInu, kx = 2, ky = 2, model = ''):
 	"""
 	Initiate EBL photon density model class. 
 
@@ -75,6 +75,7 @@ class EBL(object):
 	self._loglmu= np.log10(lmu)
 	self._nuInu= np.log10(nuInu)
 	self.__eblSpline = RBSpline(self._loglmu,self._z,self._nuInu,kx=kx,ky=ky)
+	self._model = model
 	return
 
     @property
@@ -212,7 +213,7 @@ class EBL(object):
 		lmu = lmu[::-1] * 1e-4
 		nuInu = nuInu[::-1]
 
-	return EBL(z,lmu,nuInu)
+	return EBL(z,lmu,nuInu, model = model)
 
     @staticmethod
     def readascii(file_name):
@@ -569,21 +570,10 @@ class EBL(object):
 		    n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
 
 	kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
-	result = simps(kernel, np.log(e3d_array), axis = 2) * (1. + zz) * (1. + zz) * (1. + zz)
+	result = simps(kernel, np.log(e3d_array), axis = 2)
+	if self._model.find('gilmore') < 0:
+	    result *= (1. + zz) * (1. + zz) * (1. + zz)
 
 	result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40
-
-	#result = np.zeros_like(ethr_eV)
-
-	#for i in range(ethr_eV.shape[0]): # loop over ETeV dimension
-	#    for j in range(ethr_eV.shape[1]): #loop over z dimension
-	#	if ethr_eV[i,j] < emax_eV:
-	#	    e3d_array[i,j] =  np.logspace(np.log10(ethr_eV[i,j]), np.log10(emax_eV), steps_e)
-	#	    b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
-	#	    #b3d_array.mask[i,j] = np.zeros(steps_e, dtype = np.bool)
-	#	    n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
-	#	    kernel = b3d_array[i,j] * b3d_array[i,j] * n3d_array[i,j] * Pkernel(1. - b3d_array[i,j]) * e3d_array[i,j]
-	#	    result[i,j] = simps(kernel, np.log(e3d_array[i,j]))
-	#result *= (1. + zz) * (1. + zz) * (1. + zz)
 
 	return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value

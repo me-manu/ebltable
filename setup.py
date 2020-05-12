@@ -42,7 +42,7 @@ setup(
 
     # What does your project relate to?
     keywords=['extragalactic backgroun light', 'Fermi', 'IACT', 'EBL', 'gamma-ray',
-		'absorption', 'opacity', 'LIV', 'Lorentz invariance violation'],
+              'absorption', 'opacity', 'LIV', 'Lorentz invariance violation'],
 
     packages = find_packages(exclude=['build', 'docs', 'templates']),
 

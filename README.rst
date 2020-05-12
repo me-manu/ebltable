@@ -8,7 +8,7 @@ for high energy gamma rays.
 Prerequisites
 -------------
 
-Python 2.7 and newest versions of the following packages: 
+Python 2.7 or 3.x and the following packages: 
     - numpy 
     - scipy
     - astropy

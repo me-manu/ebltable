@@ -19,7 +19,9 @@ setup(
     package_data={'ebltable': ['data/*'], },
 
     description='Python code to read in and interpolate tables for absorption of high energy gamma rays with additional helper functions',
-    long_description=long_description,  #this is the
+    long_description=long_description,  #this is the readme 
+    long_description_type
+    long_description_content_type='text/x-rst',
 
     # The project's main homepage.
     url='https://github.com/me-manu/ebltable',

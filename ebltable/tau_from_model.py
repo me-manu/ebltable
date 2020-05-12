@@ -26,13 +26,13 @@ class OptDepth(object):
 
     Arguments
     ---------
-    z:                redshift, m-dim numpy array, given by model file
-    logEGeV:        log10 energy in GeV, n-dim numpy array, given by model file
-    tau:        nxm - dim array with optical depth values, given by model file
+    z: redshift, m-dim numpy array, given by model file
+    logEGeV: log10 energy in GeV, n-dim numpy array, given by model file
+    tau: nxm - dim array with optical depth values, given by model file
     """
     
 
-    def __init__(self, z, EGeV, tau,kx = 2, ky = 2):
+    def __init__(self, z, EGeV, tau, kx=2, ky=2):
         """
         Initiate Optical depth model class. 
 
@@ -58,7 +58,7 @@ class OptDepth(object):
         self._z = np.array(z)
         self._logEGeV = np.log10(EGeV)
         self._tau = np.array(tau)
-        self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
+        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx,ky=ky)
         return
 
     @property
@@ -66,7 +66,7 @@ class OptDepth(object):
         return self._z
 
     @z.setter
-    def z(self,z,kx = 2, ky = 2):
+    def z(self, z, kx=2, ky=2):
         self._z = z
         self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
         return 
@@ -76,7 +76,7 @@ class OptDepth(object):
         return self._logEGeV
 
     @logEGeV.setter
-    def logEGeV(self,EGeV,kx = 2, ky = 2):
+    def logEGeV(self, EGeV, kx=2, ky=2):
         self._logEGeV = np.log10(EGeV)
         self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
         return 
@@ -86,26 +86,27 @@ class OptDepth(object):
         return self._tau
 
     @tau.setter
-    def tau(self,tau,kx = 2, ky = 2):
+    def tau(self, tau, kx=2, ky=2):
         self._tau = tau
-        self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
+        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx,ky=ky)
         return 
 
     @staticmethod
-    def readmodel(model, kx = 2, ky = 2):
+    def readmodel(model, kx=2, ky=2):
         """
         Read in an EBL model from an EBL model file
 
         Parameters
         ----------
-        model:                str, 
-                        EBL model to use.
-                        Currently supported models are listed in Notes Section
+        model: str, 
+            EBL model to use.
+            Currently supported models are listed in Notes Section
         Notes
         -----
         Supported EBL models:
         Name:                Publication:
         franceschini         Franceschini et al. (2008), http://www.astro.unipd.it/background/
+        franceschini2017     Franceschini et al. (2017)
         kneiske              Kneiske & Dole (2010)
         finke                Finke et al.(2010)                http://www.phy.ohiou.edu/~finke/EBL/
         dominguez            Dominguez et al. (2011)
@@ -119,7 +120,9 @@ class OptDepth(object):
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
-        if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke':
+        if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke' \
+            or model == 'franceschini2017':
+
             if model == 'kneiske':
                 file_name = os.path.join(ebl_file_path, 'tau_ebl_cmb_kneiske.dat')
             elif model == 'dominguez':
@@ -130,6 +133,8 @@ class OptDepth(object):
                 file_name = os.path.join(ebl_file_path, 'tau_lower_dominguez11_cta.out')
             elif model == 'finke':
                 file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
+            elif model == 'franceschini2017':
+                file_name = os.path.join(ebl_file_path, 'tau_fran17.dat')
             else:
                 raise ValueError("Unknown EBL model chosen!")
 
@@ -189,13 +194,13 @@ class OptDepth(object):
 
         Parameters
         ----------
-        file_name:        str, 
-                        full path to optical depth model file, 
-                        with a (n+1) x (m+1) dimensional table.
-                        The zeroth column contains the energy values in Energy (GeV), 
-                        first row contains the redshift values. 
-                        The remaining values are the tau values. 
-                        The [0,0] entry will be ignored.
+        file_name: str, 
+            full path to optical depth model file, 
+            with a (n+1) x (m+1) dimensional table.
+            The zeroth column contains the energy values in Energy (GeV), 
+            first row contains the redshift values. 
+            The remaining values are the tau values. 
+            The [0,0] entry will be ignored.
         """
         data = np.loadtxt(file_name)
         z = data[0,1:]
@@ -205,7 +210,7 @@ class OptDepth(object):
 
     @staticmethod
     def readfits(file_name,
-                hdu_tau_vs_z= 'TAU_VS_Z',
+                hdu_tau_vs_z='TAU_VS_Z',
                 hdu_energies='ENERGIES',
                 zcol='REDSHIFT',
                 taucol='OPT_DEPTH',
@@ -216,20 +221,20 @@ class OptDepth(object):
         Parameters
         ----------
         filename: str, 
-                full path to fits file containing the opacities, redshifts, and energies
+            full path to fits file containing the opacities, redshifts, and energies
 
         kwargs
         ------
         hdu_tau_vs_z: str, optional,
-                name of hdu that contains `~astropy.Table` with redshifts and tau values
+            name of hdu that contains `~astropy.Table` with redshifts and tau values
         hdu_energies: str, optional,
-                name of hdu that contains `~astropy.Table` with energies
+            name of hdu that contains `~astropy.Table` with energies
         zcol: str, optional,
-                name of column of `~astropy.Table` with redshift values
+            name of column of `~astropy.Table` with redshift values
         taucol: str, optional,
-                name of column of `~astropy.Table` with optical depth values
+            name of column of `~astropy.Table` with optical depth values
         ecol: str, optional,
-                name of column of `~astropy.Table` with energy values
+            name of column of `~astropy.Table` with energy values
         """
         t = Table.read(file_name, hdu = hdu_tau_vs_z)
         z = t[zcol].data
@@ -238,7 +243,7 @@ class OptDepth(object):
         EGeV = t2[ecol].data * t2[ecol].unit
         return OptDepth(z,EGeV.to(u.GeV).value,tau.T)
 
-    def writefits(self,filename, z,ETeV):
+    def writefits(self, filename, z, ETeV):
         """
         Write optical depth to a fits file using 
         the astropy table environment. 
@@ -246,7 +251,7 @@ class OptDepth(object):
         Parameters
         ----------
         filename: str,
-             full file path for output fits file
+            full file path for output fits file
         z: `~numpy.ndarray` or list
             source redshift, m-dimensional
 
@@ -265,7 +270,7 @@ class OptDepth(object):
         hdulist.writeto(filename, overwrite = True)
         return
 
-    def opt_depth(self,z,ETeV):
+    def opt_depth(self, z, ETeV):
         """
         Returns optical depth for redshift z and Engergy (TeV) from BSpline Interpolation for z,E arrays
 
@@ -319,10 +324,10 @@ class OptDepth(object):
 
         Parameter
         ---------
-        z:        float, 
-                redshift
-        tau:        float, 
-                optical depth
+        z: float, 
+            redshift
+        tau: float, 
+            optical depth
 
         Returns
         -------
@@ -352,15 +357,15 @@ class OptDepth(object):
 
         Parameters
         ----------
-        z:        float, 
-                redshift
-        Ebin:         `~numpy.ndarray` or list
-                Energies of bin bounds in TeV, n-dimensional
-        func:        function pointer
-                Spectrum, needs to be of the form func(Energy [TeV], **params), 
-                needs to except 2xn dim arrays
-        params:        dict,
-                parameters that are past to func
+        z: float, 
+            redshift
+        Ebin: array-like
+            Energies of bin bounds in TeV, n-dimensional
+        func: function pointer
+            Spectrum, needs to be of the form func(Energy [TeV], **params), 
+            needs to except 2xn dim arrays
+        params: dict,
+            parameters that are past to func
 
         kwargs
         ------

@@ -8,7 +8,7 @@ from scipy.integrate import simps
 from scipy.interpolate import RectBivariateSpline as RBSpline
 from scipy.interpolate import UnivariateSpline as USpline
 from astropy.io import fits
-from astropy.table import Table,Column
+from astropy.table import Table, Column
 import astropy.units as u
 import warnings
 import os
@@ -31,8 +31,7 @@ class OptDepth(object):
     tau: nxm - dim array with optical depth values, given by model file
     """
     
-
-    def __init__(self, z, EGeV, tau, kx=2, ky=2):
+    def __init__(self, z, EGeV, tau, kx=1, ky=1):
         """
         Initiate Optical depth model class. 
 
@@ -58,7 +57,7 @@ class OptDepth(object):
         self._z = np.array(z)
         self._logEGeV = np.log10(EGeV)
         self._tau = np.array(tau)
-        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx,ky=ky)
+        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
         return
 
     @property
@@ -66,7 +65,7 @@ class OptDepth(object):
         return self._z
 
     @z.setter
-    def z(self, z, kx=2, ky=2):
+    def z(self, z, kx=1, ky=1):
         self._z = z
         self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
         return 
@@ -76,9 +75,10 @@ class OptDepth(object):
         return self._logEGeV
 
     @logEGeV.setter
-    def logEGeV(self, EGeV, kx=2, ky=2):
+    def logEGeV(self, EGeV, kx=1, ky=1):
+        EGeV[EGeV == 0.] = 1e-40
         self._logEGeV = np.log10(EGeV)
-        self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
+        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
         return 
 
     @property
@@ -86,42 +86,52 @@ class OptDepth(object):
         return self._tau
 
     @tau.setter
-    def tau(self, tau, kx=2, ky=2):
+    def tau(self, tau, kx=1, ky=1):
         self._tau = tau
-        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx,ky=ky)
+        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
         return 
 
     @staticmethod
-    def readmodel(model, kx=2, ky=2):
+    def readmodel(model, kx=1, ky=1, pad_zeros=True):
         """
         Read in an EBL model from an EBL model file
 
         Parameters
         ----------
-        model: str, 
+        model: str
             EBL model to use.
             Currently supported models are listed in Notes Section
+        pad_zeros: bool
+            if true, pad tau array with zeros for z=0
+        kx: int
+            Spline order in x direction
+        ky: int
+            Spline order in y direction
+
         Notes
         -----
         Supported EBL models:
         Name:                Publication:
         franceschini         Franceschini et al. (2008), http://www.astro.unipd.it/background/
         franceschini2017     Franceschini et al. (2017)
+        saldana-lopez        Saldana-Lopez et al. (2021) https://www.ucm.es/blazars/ebl
+        saldana-lopez-upper  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
+        saldana-lopez-lower  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
         kneiske              Kneiske & Dole (2010)
         finke                Finke et al.(2010)                http://www.phy.ohiou.edu/~finke/EBL/
         dominguez            Dominguez et al. (2011)
         dominguez-upper      Dominguez et al. (2011) upper uncertainty
         dominguez-lower      Dominguez et al. (2011) lower uncertainty
-        inuoe                Inuoe et al. (2013), (baseline) http://www.slac.stanford.edu/~yinoue/Download.html
-        inuoe-low-pop3       Inuoe et al. (2013), (low pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
-        inuoe-up-pop3        Inuoe et al. (2013), (up pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
+        inoue                Inuoe et al. (2013), (baseline) http://www.slac.stanford.edu/~yinoue/Download.html
+        inoue-low-pop3       Inuoe et al. (2013), (low pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
+        inoue-up-pop3        Inuoe et al. (2013), (up pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
         gilmore              Gilmore et al. (2012) (fiducial model)
         gilmore-fixed        Gilmore et al. (2012) (fixed model)
         """
-        ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
+        ebl_file_path = os.path.join(os.path.split(__file__)[0], 'data/')
 
         if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke' \
-            or model == 'franceschini2017':
+            or model == 'franceschini2017' or model.find('saldana') >= 0.:
 
             if model == 'kneiske':
                 file_name = os.path.join(ebl_file_path, 'tau_ebl_cmb_kneiske.dat')
@@ -135,6 +145,12 @@ class OptDepth(object):
                 file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
             elif model == 'franceschini2017':
                 file_name = os.path.join(ebl_file_path, 'tau_fran17.dat')
+            elif model == 'saldana-lopez':
+                file_name = os.path.join(ebl_file_path, 'tau_saldana-lopez21.out')
+            elif model == 'saldana-lopez-upper':
+                file_name = os.path.join(ebl_file_path, 'tau_high_saldana-lopez21.out')
+            elif model == 'saldana-lopez-lower':
+                file_name = os.path.join(ebl_file_path, 'tau_low_saldana-lopez21.out')
             else:
                 raise ValueError("Unknown EBL model chosen!")
 
@@ -185,7 +201,13 @@ class OptDepth(object):
         else:
             raise ValueError("Unknown EBL model chosen!")
 
-        return OptDepth(z,EGeV, tau, kx=kx, ky=ky)
+        # insert z = 0 and tau = 0 for all E (only done in Finke model)
+        # in order to get interpolation below z_min right
+        if not model == 'finke' and pad_zeros:
+            z = np.insert(z, 0, 0.)
+            tau = np.hstack([np.zeros(EGeV.shape[0])[:, np.newaxis], tau])
+
+        return OptDepth(z, EGeV, tau, kx=kx, ky=ky)
 
     @staticmethod
     def readascii(file_name):
@@ -241,7 +263,7 @@ class OptDepth(object):
         tau = t[taucol].data
         t2 = Table.read(file_name, hdu = hdu_energies)
         EGeV = t2[ecol].data * t2[ecol].unit
-        return OptDepth(z,EGeV.to(u.GeV).value,tau.T)
+        return OptDepth(z, EGeV.to(u.GeV).value, tau.T)
 
     def writefits(self, filename, z, ETeV):
         """
@@ -258,16 +280,20 @@ class OptDepth(object):
         ETeV: `~numpy.ndarray` or list
             Energies in TeV, n-dimensional
         """
-        t = Table([z,self.opt_depth(z,ETeV)], names = ('REDSHIFT', 'OPT_DEPTH'))
-        t2 = Table()
-        t2['ENERGY'] = Column(ETeV * 1e3, unit = 'GeV')
+        t = Table([z, self.opt_depth(z, ETeV)],
+                   names=('REDSHIFT', 'OPT_DEPTH'))
 
-        hdulist = fits.HDUList([fits.PrimaryHDU(),fits.table_to_hdu(t),fits.table_to_hdu(t2)])
+        t2 = Table()
+        t2['ENERGY'] = Column(ETeV * 1e3, unit='GeV')
+
+        hdulist = fits.HDUList([fits.PrimaryHDU(),
+                                fits.table_to_hdu(t),
+                                fits.table_to_hdu(t2)])
 
         hdulist[1].name = 'TAU_VS_Z'
         hdulist[2].name = 'ENERGIES'
 
-        hdulist.writeto(filename, overwrite = True)
+        hdulist.writeto(filename, overwrite=True)
         return
 
     def opt_depth(self, z, ETeV):
@@ -302,18 +328,20 @@ class OptDepth(object):
         elif type(z) == list:
             z = np.array(z)
 
-        if np.any(z < self._z[0]): warnings.warn(
-            "Warning: a z value is below interpolation range, zmin = {0:.2f}".format(self._z[0]), 
-            RuntimeWarning)
+        if np.any(z < self._z[0]):
+            warnings.warn("Warning: a z value is below interpolation range, zmin = {0:.2f}".format(self._z[0]),
+                          RuntimeWarning)
 
-        result = np.zeros((z.shape[0],ETeV.shape[0]))
-        tt = np.zeros((z.shape[0],ETeV.shape[0]))
+        result = np.zeros((z.shape[0], ETeV.shape[0]))
+        tt = np.zeros((z.shape[0], ETeV.shape[0]))
 
         args_z = np.argsort(z)
         args_E = np.argsort(ETeV)
 
         # Spline interpolation requires sorted lists
-        tt[args_z,:] = self._tauSpline(np.log10(np.sort(ETeV)*1e3),np.sort(z)).transpose()
+        # alternative would be to calculate the spline with grid=False
+        # but this takes longer in my tests
+        tt[args_z,:] = self._tauSpline(np.log10(np.sort(ETeV)) + 3., np.sort(z)).transpose()
         result[:,args_E] = tt
 
         return np.squeeze(result)
@@ -334,7 +362,7 @@ class OptDepth(object):
         float, energy in GeV
         """
 
-        tau_array = self._tauSpline(self._logEGeV,z)[:,0]
+        tau_array = self._tauSpline(self._logEGeV, z)[:,0]
 
         mask = np.concatenate([[True], np.diff(tau_array) > 0.])
 
@@ -347,11 +375,11 @@ class OptDepth(object):
             raise ValueError("Could not interpolate tau vs E")
 
         Enew = USpline(tau_array[mask],self._logEGeV[mask],
-                s = 0, k = 1, ext = 'extrapolate')
+                s=0, k=1, ext='extrapolate')
 
         return np.power(10.,Enew(tau))
 
-    def opt_depth_Ebin(self,z,Ebin,func,params,Esteps = 50):
+    def opt_depth_Ebin(self, z, Ebin, func, params, Esteps=50):
         """
         Compute average optical depth within an energy bin assuming a specific spectral shape
 
@@ -386,11 +414,11 @@ class OptDepth(object):
         for i,E in enumerate(Ebin):
             if i == len(Ebin) - 1:
                 break
-            logE_array.append(np.linspace(np.log(E),np.log(Ebin[i+1]),Esteps))
-            t_array.append(self.opt_depth(z,np.exp(logE_array)))
+            logE_array.append(np.linspace(np.log(E), np.log(Ebin[i+1]), Esteps))
+            t_array.append(self.opt_depth(z, np.exp(logE_array[-1])))
 
         logE_array = np.array(logE_array)
         t_array = np.array(t_array)
         # return averaged tau value
-        return simps(func(np.exp(logE_array),**params) * t_array * np.exp(logE_array), logE_array, axis = 1) / \
-                simps(func(np.exp(logE_array),**params) * np.exp(logE_array), logE_array, axis = 1)
+        return simps(func(np.exp(logE_array), **params) * t_array * np.exp(logE_array), logE_array, axis=1) / \
+                simps(func(np.exp(logE_array), **params) * np.exp(logE_array), logE_array, axis=1)

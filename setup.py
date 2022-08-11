@@ -15,7 +15,7 @@ setup(
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
     version=__version__,
-    include_package_data = True,
+    include_package_data=True,
     package_data={'ebltable': ['data/*'], },
 
     description='Python code to read in and interpolate tables for absorption of high energy gamma rays with additional helper functions',
@@ -38,22 +38,21 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Astronomy',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ],
 
     # What does your project relate to?
     keywords=['extragalactic backgroun light', 'Fermi', 'IACT', 'EBL', 'gamma-ray',
               'absorption', 'opacity', 'LIV', 'Lorentz invariance violation'],
 
-    packages = find_packages(exclude=['build', 'docs', 'templates']),
+    packages=find_packages(exclude=['build', 'docs', 'templates']),
 
     
     install_requires=[
-        'numpy >= 1.6',
-        'scipy',
-        'astropy>=1.2.1',
+        'numpy >= 1.19',
+        'scipy >= 1.5',
+        'astropy >= 4.0',
     ]
 
 )

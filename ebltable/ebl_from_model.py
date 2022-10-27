@@ -1,14 +1,10 @@
-"""
-Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
-"""
-
 # ---- IMPORTS -----------------------------------------------#
+from __future__ import absolute_import, division, print_function
 import numpy as np
 import os
 from scipy.interpolate import RectBivariateSpline as RBSpline
-from scipy.interpolate import UnivariateSpline as USpline
 from astropy.io import fits
-from astropy.table import Table,Column 
+from astropy.table import Table, Column
 from scipy.integrate import simps
 import warnings
 from os.path import join
@@ -49,6 +45,8 @@ class EBL(object):
     z:                redshift, m-dim numpy array, given by model file
     loglmu:        log wavelength, n-dim numpy array, given by model file, in mu m
     nuInu:        nxm - dim array with EBL intensity in nW m^-2 sr^-1, given by model file
+
+    TODO: rewrite with GridInterpolator base class!
     """
 
     def __init__(self, z, lmu, nuInu, kx=1, ky=1, model=''):

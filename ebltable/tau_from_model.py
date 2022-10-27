@@ -1,95 +1,44 @@
-"""
-Class to read gamma-ray absorption from EBL models
-"""
-
 # ---- IMPORTS -----------------------------------------------#
+from __future__ import absolute_import, division, print_function
 import numpy as np
 from scipy.integrate import simps
-from scipy.interpolate import RectBivariateSpline as RBSpline
 from scipy.interpolate import UnivariateSpline as USpline
-from astropy.io import fits
-from astropy.table import Table, Column
-import astropy.units as u
-import warnings
+from .interpolate import GridInterpolator
 import os
 # ------------------------------------------------------------#
 
 
-class OptDepth(object):
+class OptDepth(GridInterpolator):
     """
     Class to calculate attenuation of gamma-rays due to interaction 
     with the EBL from EBL models.
-    
-    Important: if using the predefined model files, 
-    the path to the model files has to be set through the 
-    environment variable EBL_FILE_PATH
-
-    Arguments
-    ---------
-    z: redshift, m-dim numpy array, given by model file
-    logEGeV: log10 energy in GeV, n-dim numpy array, given by model file
-    tau: nxm - dim array with optical depth values, given by model file
     """
     
-    def __init__(self, z, EGeV, tau, kx=1, ky=1):
+    def __init__(self, z, EGeV, tau, kx=1, ky=1, **kwargs):
         """
         Initiate Optical depth model class. 
 
         Parameters
         ----------
-        z: `~numpy.ndarray` or list
+        z: array-like
             source redshift, m-dimensional
 
-        EGeV: `~numpy.ndarray` or list
+        EGeV: array-like
             Energies in GeV, n-dimensional
 
-        tau: `~numpy.ndarray` or list
+        tau: array-like
             n x m array with optical depth values
 
-        {options}
-
         kx: int
-            order of interpolation spline along energy axis, default: 2
+            order of interpolation spline along energy axis, default: 1
+
         ky: int
-            order of interpolation spline along energy axis, default: 2
+            order of interpolation spline along energy axis, default: 1
+
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
-
-        self._z = np.array(z)
-        self._logEGeV = np.log10(EGeV)
-        self._tau = np.array(tau)
-        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
-        return
-
-    @property
-    def z(self):
-        return self._z
-
-    @z.setter
-    def z(self, z, kx=1, ky=1):
-        self._z = z
-        self._tauSpline = RBSpline(self._logEGeV,self._z,self._tau,kx=kx,ky=ky)
-        return 
-
-    @property
-    def logEGeV(self):
-        return self._logEGeV
-
-    @logEGeV.setter
-    def logEGeV(self, EGeV, kx=1, ky=1):
-        EGeV[EGeV == 0.] = 1e-40
-        self._logEGeV = np.log10(EGeV)
-        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
-        return 
-
-    @property
-    def tau(self):
-        return self._tau
-
-    @tau.setter
-    def tau(self, tau, kx=1, ky=1):
-        self._tau = tau
-        self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
-        return 
+        super(OptDepth, self).__init__(EGeV, z, tau, logx=True, kx=kx, ky=ky, **kwargs)
 
     @staticmethod
     def readmodel(model, kx=1, ky=1, pad_zeros=True):
@@ -210,9 +159,9 @@ class OptDepth(object):
         return OptDepth(z, EGeV, tau, kx=kx, ky=ky)
 
     @staticmethod
-    def readascii(file_name):
+    def readascii(file_name, kx=1, ky=1, **kwargs):
         """
-        Read in an EBL model file from an arbritrary file.
+        Read in an optical depth model file from an arbritrary file.
 
         Parameters
         ----------
@@ -223,20 +172,29 @@ class OptDepth(object):
             first row contains the redshift values. 
             The remaining values are the tau values. 
             The [0,0] entry will be ignored.
+
+        kx: int
+            order of interpolation spline along energy axis, default: 1
+
+        ky: int
+            order of interpolation spline along energy axis, default: 1
+
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
-        data = np.loadtxt(file_name)
-        z = data[0,1:]
-        tau = data[1:,1:]
-        EGeV = data[1:,0]
-        return OptDepth(z, EGeV, tau)
+        EGeV, z, tau = GridInterpolator._read_ascii(file_name)
+        return OptDepth(z, EGeV, tau, kx=kx, ky=ky, **kwargs)
 
     @staticmethod
     def readfits(file_name,
-                hdu_tau_vs_z='TAU_VS_Z',
-                hdu_energies='ENERGIES',
-                zcol='REDSHIFT',
-                taucol='OPT_DEPTH',
-                ecol='ENERGY'):
+                 hdu_tau_vs_z='TAU_VS_Z',
+                 hdu_energies='ENERGIES',
+                 zcol='REDSHIFT',
+                 taucol='OPT_DEPTH',
+                 ecol='ENERGY',
+                 kx=1, ky=1,
+                 **kwargs
+                 ):
         """
         Read opacities from a fits file using the astropy.io module
 
@@ -249,23 +207,40 @@ class OptDepth(object):
         ------
         hdu_tau_vs_z: str, optional,
             name of hdu that contains `~astropy.Table` with redshifts and tau values
+
         hdu_energies: str, optional,
             name of hdu that contains `~astropy.Table` with energies
+
         zcol: str, optional,
             name of column of `~astropy.Table` with redshift values
+
         taucol: str, optional,
             name of column of `~astropy.Table` with optical depth values
+
         ecol: str, optional,
             name of column of `~astropy.Table` with energy values
-        """
-        t = Table.read(file_name, hdu = hdu_tau_vs_z)
-        z = t[zcol].data
-        tau = t[taucol].data
-        t2 = Table.read(file_name, hdu = hdu_energies)
-        EGeV = t2[ecol].data * t2[ecol].unit
-        return OptDepth(z, EGeV.to(u.GeV).value, tau.T)
 
-    def writefits(self, filename, z, ETeV):
+        kx: int
+            order of interpolation spline along energy axis, default: 1
+
+        ky: int
+            order of interpolation spline along energy axis, default: 1
+
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+
+        TODO: this is not working properly yet!
+        """
+        EGeV, z, tau = GridInterpolator._read_fits(file_name,
+                                                   hdu_tau_vs_z,
+                                                   hdu_energies,
+                                                   ecol,
+                                                   zcol,
+                                                   taucol,
+                                                   xtarget_unit="GeV")
+        return OptDepth(z, EGeV, tau, kx=kx, ky=ky, **kwargs)
+
+    def writefits(self, filename, z, ETeV, overwrite=True):
         """
         Write optical depth to a fits file using 
         the astropy table environment. 
@@ -274,27 +249,25 @@ class OptDepth(object):
         ----------
         filename: str,
             full file path for output fits file
-        z: `~numpy.ndarray` or list
+
+        z: array-like
             source redshift, m-dimensional
 
-        ETeV: `~numpy.ndarray` or list
+        ETeV: array-like
             Energies in TeV, n-dimensional
+
+        overwrite: bool
+            Overwrite existing file.
         """
-        t = Table([z, self.opt_depth(z, ETeV)],
-                   names=('REDSHIFT', 'OPT_DEPTH'))
 
-        t2 = Table()
-        t2['ENERGY'] = Column(ETeV * 1e3, unit='GeV')
-
-        hdulist = fits.HDUList([fits.PrimaryHDU(),
-                                fits.table_to_hdu(t),
-                                fits.table_to_hdu(t2)])
-
-        hdulist[1].name = 'TAU_VS_Z'
-        hdulist[2].name = 'ENERGIES'
-
-        hdulist.writeto(filename, overwrite=True)
-        return
+        self._write_fits(filename, ETeV, z,
+                         hdu_name_grid="TAU_VS_Z",
+                         hdu_name_x="ENERGIES",
+                         xunit="TeV",
+                         xcol_name="ENERGY",
+                         ycol_name="REDSHIFT",
+                         Zcol_name="OPT_DEPTH",
+                         xtarget_unit="GeV", overwrite=overwrite)
 
     def opt_depth(self, z, ETeV):
         """
@@ -302,58 +275,30 @@ class OptDepth(object):
 
         Parameters
         ----------
-        z: `~numpy.ndarray` or list
+        z: array-like
             source redshift, m-dimensional
 
-        ETeV: `~numpy.ndarray` or list
+        ETeV: array-like
             Energies in TeV, n-dimensional
 
         Returns
         -------
-        (N x M) `~numpy.ndarray` with corresponding optical depth values.
-        If z or E are scalars, the corresponding axis will be squezed.
-
-        Notes
-        -----
-        if any z < self._z (from interpolation table), self._z[0] is used and RuntimeWarning is issued.
-        This might overestimate the optical depth!
+        (m x n) `~numpy.ndarray` with corresponding optical depth values.
+        If z or E are scalars, the corresponding axis will be squeezed.
 
         """
-        if np.isscalar(ETeV):
-            ETeV = np.array([ETeV])
-        elif type(ETeV) == list:
-            ETeV = np.array(ETeV)
-        if np.isscalar(z):
-            z = np.array([z])
-        elif type(z) == list:
-            z = np.array(z)
-
-        if np.any(z < self._z[0]):
-            warnings.warn("Warning: a z value is below interpolation range, zmin = {0:.2f}".format(self._z[0]),
-                          RuntimeWarning)
-
-        result = np.zeros((z.shape[0], ETeV.shape[0]))
-        tt = np.zeros((z.shape[0], ETeV.shape[0]))
-
-        args_z = np.argsort(z)
-        args_E = np.argsort(ETeV)
-
-        # Spline interpolation requires sorted lists
-        # alternative would be to calculate the spline with grid=False
-        # but this takes longer in my tests
-        tt[args_z,:] = self._tauSpline(np.log10(np.sort(ETeV)) + 3., np.sort(z)).transpose()
-        result[:,args_E] = tt
-
-        return np.squeeze(result)
+        result = self.evaluate(ETeV * 1e3, z)
+        return result
 
     def opt_depth_inverse(self, z, tau):
         """
-        Return Energy in GeV for redshift z and optical depth tau from BSpline Interpolation
+        Return Energy in GeV for redshift z and optical depth tau from interpolation
 
         Parameter
         ---------
         z: float, 
             redshift
+
         tau: float, 
             optical depth
 
@@ -362,7 +307,7 @@ class OptDepth(object):
         float, energy in GeV
         """
 
-        tau_array = self._tauSpline(self._logEGeV, z)[:,0]
+        tau_array = self._spline(self._x, z)[:, 0]
 
         mask = np.concatenate([[True], np.diff(tau_array) > 0.])
 
@@ -374,10 +319,10 @@ class OptDepth(object):
         if not np.sum(mask):
             raise ValueError("Could not interpolate tau vs E")
 
-        Enew = USpline(tau_array[mask],self._logEGeV[mask],
-                s=0, k=1, ext='extrapolate')
+        Enew = USpline(tau_array[mask], self._x[mask],
+                       s=0, k=1, ext='extrapolate')
 
-        return np.power(10.,Enew(tau))
+        return np.power(10., Enew(tau))
 
     def opt_depth_Ebin(self, z, Ebin, func, params, Esteps=50):
         """

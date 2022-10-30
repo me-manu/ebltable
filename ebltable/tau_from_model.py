@@ -228,16 +228,16 @@ class OptDepth(GridInterpolator):
 
         kwargs: dict
             Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
-
-        TODO: this is not working properly yet!
         """
+
         EGeV, z, tau = GridInterpolator._read_fits(file_name,
-                                                   hdu_tau_vs_z,
-                                                   hdu_energies,
-                                                   ecol,
-                                                   zcol,
-                                                   taucol,
+                                                   hdu_name_grid=hdu_tau_vs_z,
+                                                   hdu_name_x=hdu_energies,
+                                                   xcol_name=ecol,
+                                                   ycol_name=zcol,
+                                                   Zcol_name=taucol,
                                                    xtarget_unit="GeV")
+
         return OptDepth(z, EGeV, tau, kx=kx, ky=ky, **kwargs)
 
     def writefits(self, filename, z, ETeV, overwrite=True):
@@ -260,7 +260,7 @@ class OptDepth(GridInterpolator):
             Overwrite existing file.
         """
 
-        self._write_fits(filename, ETeV, z,
+        self._write_fits(filename, ETeV * 1e3, z,
                          hdu_name_grid="TAU_VS_Z",
                          hdu_name_x="ENERGIES",
                          xunit="TeV",

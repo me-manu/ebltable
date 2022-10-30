@@ -33,6 +33,11 @@ class TestOptDepth:
         for m in models:
             tau = OptDepth.readmodel(model=m, kx=1, ky=1)
 
+            # test the setters and getters
+            tau.x = 10.**tau.x  # energy, log is done in setter function
+            tau.y = tau.y  # redshift
+            tau.Z = tau.Z  # opt depth values
+
             # test zero case
             assert_allclose(tau.opt_depth(0., ETeV), np.zeros_like(ETeV), atol=1e-6)
 

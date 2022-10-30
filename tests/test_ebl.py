@@ -31,9 +31,9 @@ class TestEBL:
             ebl = EBL.readmodel(model=m, kx=1, ky=1)
 
             # test the setters and getters
-            ebl.z = ebl.z
-            ebl.loglmu = 10.**ebl.loglmu
-            ebl.nuInu = 10.**ebl.nuInu
+            ebl.y = ebl.y
+            ebl.x = 10.**ebl.x
+            ebl.Z = 10.**ebl.Z
 
             ebl.ebl_array(z, lmu)
             ebl.ebl_int(z=0.)
@@ -50,7 +50,7 @@ class TestEBL:
         ebl.writefits('test.fits', z=z, lmu=lmu)
         ebl_new = EBL.readfits('test.fits')
 
-        assert_allclose(10.**ebl_new.nuInu.T, ebl_val, rtol=1e-15)
+        assert_allclose(10.**ebl_new.Z.T, ebl_val, rtol=1e-15)
 
     def test_optical_depth(self):
         model = 'saldana-lopez'

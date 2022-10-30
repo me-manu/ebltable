@@ -51,6 +51,8 @@ class GridInterpolator(object):
         self._logx = logx
         self._logy = logy
         self._logZ = logZ
+        self._kx = kx
+        self._ky = ky
 
         if logx:
             x[x == 0.] = 1e-40
@@ -82,6 +84,35 @@ class GridInterpolator(object):
 
     @property
     def Z(self):
+        return self._Z
+
+    @x.setter
+    def x(self, x):
+        if self._logx:
+            x[x == 0.] = 1e-40
+            self._x = np.log10(x)
+        else:
+            self._x = x
+        self._spline = RectBivariateSpline(self._x, self._y, self._Z, kx=self._kx, ky=self._ky)
+
+    @y.setter
+    def y(self, y):
+        if self._logy:
+            y[y == 0.] = 1e-40
+            self._y = np.log10(y)
+        else:
+            self._y = y
+        self._spline = RectBivariateSpline(self._x, self._y, self._Z, kx=self._kx, ky=self._ky)
+        return self._y
+
+    @Z.setter
+    def Z(self, Z):
+        if self._logZ:
+            Z[Z == 0.] = 1e-40
+            self._Z = np.log10(Z)
+        else:
+            self._Z = Z
+        self._spline = RectBivariateSpline(self._x, self._y, self._Z, kx=self._kx, ky=self._ky)
         return self._Z
 
     @staticmethod
@@ -143,8 +174,6 @@ class GridInterpolator(object):
         xtarget_unit: str,
             name of target unit for x values
 
-        TODO: this is not working properly yet!
-
         Returns
         -------
         tuple with x, y and Z values
@@ -158,9 +187,8 @@ class GridInterpolator(object):
 
         return x.to(xtarget_unit).value, y, Z.T
 
-
     def _write_fits(self, filename, x, y, hdu_name_grid, hdu_name_x,
-                    xunit, xcol_name, ycol_name, Zcol_name, xtarget_unit="", overwrite=True):
+                    xunit, xcol_name, ycol_name, Zcol_name, xtarget_unit=None, overwrite=True):
         """
         Write Z values to a fits file using
         the astropy table environment.
@@ -199,9 +227,10 @@ class GridInterpolator(object):
 
         overwrite: bool
             Overwrite existing file.
-
-        TODO: this is not working properly yet!
         """
+        if xtarget_unit is None:
+            xtarget_unit = xunit
+
         t = Table([y, self.evaluate(x, y)],
                   names=(ycol_name, Zcol_name))
 

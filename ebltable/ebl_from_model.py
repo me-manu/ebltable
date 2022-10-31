@@ -516,13 +516,16 @@ class EBL(GridInterpolator):
                     b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
                     n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
 
-        print (n3d_array)
         kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
 
         result = simps(kernel, np.log(e3d_array), axis = 2)
         if 'gilmore' in self._model:
+            print("here")
             result *= (1. + zz) * (1. + zz) * (1. + zz)
 
         result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40
+
+        print(kernel)
+        print(result)
 
         return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value

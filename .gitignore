@@ -10,6 +10,7 @@ notebooks/*.png
 notebooks/*.pdf
 notebooks/*.fits
 notebooks/.DS_Store
+*.fits
 
 # C extensions
 *.so

@@ -112,10 +112,10 @@ class OptDepth(GridInterpolator):
                 EGeV = data[1:,0]*1e3
 
         elif model == 'franceschini':
-            file_name = os.path.join(ebl_file_path , 'tau_fran08.dat')
+            file_name = os.path.join(ebl_file_path, 'tau_fran08.dat')
 
-            data = np.loadtxt(file_name,usecols=(0,2))
-            EGeV = data[0:50,0]*1e3
+            data = np.loadtxt(file_name, usecols=(0, 2))
+            EGeV = data[0:50, 0]*1e3
             tau = np.zeros((len(EGeV),int(len(data[:,1])/len(EGeV))))
             z = np.zeros(int(len(data[:,1])/len(EGeV)))
             for i in range(z.size):
@@ -124,11 +124,11 @@ class OptDepth(GridInterpolator):
 
         elif model.find('inoue') >= 0:
             if model == 'inoue':
-                file_name = os.path.join(ebl_file_path , 'tau_gg_baseline.dat')
+                file_name = os.path.join(ebl_file_path, 'tau_gg_baseline.dat')
             elif model == 'inoue-low-pop3':
-                file_name = os.path.join(ebl_file_path , 'tau_gg_low_pop3.dat')
+                file_name = os.path.join(ebl_file_path, 'tau_gg_low_pop3.dat')
             elif model == 'inoue-up-pop3':
-                file_name = os.path.join(ebl_file_path , 'tau_gg_up_pop3.dat')
+                file_name = os.path.join(ebl_file_path, 'tau_gg_up_pop3.dat')
             else:
                 raise ValueError("Unknown EBL model chosen!")
             data = np.loadtxt(file_name)
@@ -138,15 +138,15 @@ class OptDepth(GridInterpolator):
 
         elif model.find('gilmore') >= 0:
             if model == 'gilmore':
-                file_name = os.path.join(ebl_file_path , 'opdep_fiducial.dat')
+                file_name = os.path.join(ebl_file_path, 'opdep_fiducial.dat')
             elif model == 'gilmore-fixed':
-                file_name = os.path.join(ebl_file_path , 'opdep_fixed.dat')
+                file_name = os.path.join(ebl_file_path, 'opdep_fixed.dat')
             else:
                 raise ValueError("Unknown EBL model chosen!")
             data = np.loadtxt(file_name)
-            z = data[0,1:]
-            tau = data[1:,1:]
-            EGeV = data[1:,0]/1e3
+            z = data[0, 1:]
+            tau = data[1:, 1:]
+            EGeV = data[1:, 0]/1e3
         else:
             raise ValueError("Unknown EBL model chosen!")
 

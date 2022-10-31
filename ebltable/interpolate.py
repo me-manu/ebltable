@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import numpy as np
 import warnings
-from collections import Iterable
+from collections.abc import Iterable
 from astropy.table import Table, Column
 from astropy.io import fits
 from astropy.units import Unit

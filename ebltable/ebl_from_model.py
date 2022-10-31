@@ -4,7 +4,7 @@ import numpy as np
 import os
 import astropy.units as u
 import astropy.constants as c
-from collections import Iterable
+from collections.abc import Iterable
 from scipy.integrate import simps
 from os.path import join
 from astropy.cosmology import Planck15 as cosmo
@@ -13,21 +13,22 @@ from .interpolate import GridInterpolator
 
 
 # ------------------------------------------------------------#
-def Pkernel(x):
+def p_kernel(x):
     """Kernel function from Biteau & Williams (2015), Eq. (7)"""
 
-    m = (x < 0.) & (x >= 1.)
     x[x < 0.] = np.zeros(np.sum(x < 0.))
     x[x >= 1.] = np.zeros(np.sum(x >= 1.))
     x = np.sqrt(x)
 
-    result = np.log(2.) * np.log(2.)  - np.pi *np.pi / 6. \
-            + 2. * spence(0.5 + 0.5 * x) - (x + x*x*x) / (1. - x*x) \
-            + (np.log(1. + x) - 2. * np.log(2.)) * np.log(1. - x) \
-            + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
-            + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
+    result = np.log(2.) * np.log(2.) - np.pi * np.pi / 6. \
+        + 2. * spence(0.5 + 0.5 * x) - (x + x*x*x) / (1. - x*x) \
+        + (np.log(1. + x) - 2. * np.log(2.)) * np.log(1. - x) \
+        + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
+        + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
+
     result[x <= 0.] = np.zeros(np.sum(x <= 0.))
     result[x >= 1.] = np.zeros(np.sum(x >= 1.))
+
     return result
 
 
@@ -97,23 +98,23 @@ class EBL(GridInterpolator):
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
         if model == 'kneiske':
-            file_name = join(ebl_file_path , 'ebl_nuFnu_tanja.dat')
+            file_name = join(ebl_file_path, 'ebl_nuFnu_tanja.dat')
         elif model == 'franceschini':
-            file_name = join(ebl_file_path , 'ebl_franceschini.dat')
+            file_name = join(ebl_file_path, 'ebl_franceschini.dat')
         elif model == 'dominguez':
-            file_name = join(ebl_file_path , 'ebl_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_dominguez11.out')
         elif model == 'dominguez-upper':
-            file_name = join(ebl_file_path , 'ebl_upper_uncertainties_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_upper_uncertainties_dominguez11.out')
         elif model == 'dominguez-lower':
-            file_name = join(ebl_file_path , 'ebl_lower_uncertainties_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_lower_uncertainties_dominguez11.out')
         elif model == 'gilmore':
-            file_name = join(ebl_file_path , 'eblflux_fiducial.dat')
+            file_name = join(ebl_file_path, 'eblflux_fiducial.dat')
         elif model == 'gilmore-fixed':
-            file_name = join(ebl_file_path , 'eblflux_fixed.dat')
+            file_name = join(ebl_file_path, 'eblflux_fixed.dat')
         elif model == 'cuba':
-            file_name = join(ebl_file_path , 'CUBA_UVB.dat')
+            file_name = join(ebl_file_path, 'CUBA_UVB.dat')
         elif model == 'finke':
-            file_name = join(ebl_file_path , 'ebl_modelC_Finke.txt')
+            file_name = join(ebl_file_path, 'ebl_modelC_Finke.txt')
         elif model == 'saldana-lopez':
             file_name = join(ebl_file_path, 'ebl_saldana21_comoving.txt')
         elif model == 'saldana-lopez-err':
@@ -124,21 +125,21 @@ class EBL(GridInterpolator):
         data = np.loadtxt(file_name)
 
         if model.find('gilmore') >= 0:
-            z = data[0,1:]
-            lmu = data[1:,0] * 1e-4 # convert from Angstrom to micro meter
-            nuInu = data[1:,1:]                        
+            z = data[0, 1:]
+            lmu = data[1:, 0] * 1e-4  # convert from Angstrom to micro meter
+            nuInu = data[1:, 1:]
             nuInu[nuInu == 0.] = 1e-20 * np.ones(np.sum(nuInu == 0.))
             
             # convert from ergs/s/cm^2/Ang/sr to nW/m^2/sr
-            nuInu = (nuInu.T * data[1:,0]).T * 1e4 * 1e-7 * 1e9        
+            nuInu = (nuInu.T * data[1:, 0]).T * 1e4 * 1e-7 * 1e9
 
         elif model == 'cuba':
-            z = data[0,1:-1]
-            lmu = data[1:,0] * 1e-4
-            nuInu = data[1:,1:-1]
+            z = data[0, 1:-1]
+            lmu = data[1:, 0] * 1e-4
+            nuInu = data[1:, 1:-1]
 
             # replace zeros by 1e-40
-            idx = np.where(data[1:,1:-1] == 0.)
+            idx = np.where(data[1:, 1:-1] == 0.)
             nuInu[idx] = np.ones(np.sum(nuInu == 0.)) * 1e-20
 
             # in erg / cm^2 / s / sr
@@ -151,9 +152,9 @@ class EBL(GridInterpolator):
                 lmu[i+1] = (lmu[i + 2] + lmu[i]) / 2.
 
         else:
-            z = data[0,1:]
-            lmu = data[1:,0]
-            nuInu = data[1:,1:]
+            z = data[0, 1:]
+            lmu = data[1:, 0]
+            nuInu = data[1:, 1:]
             if model == 'finke': 
                 lmu = lmu[::-1] * 1e-4
                 nuInu = nuInu[::-1]
@@ -516,16 +517,13 @@ class EBL(GridInterpolator):
                     b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
                     n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
 
-        kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
+        kernel = b3d_array * b3d_array * n3d_array * p_kernel(1. - b3d_array) * e3d_array
 
         result = simps(kernel, np.log(e3d_array), axis = 2)
-        if 'gilmore' in self._model:
-            print("here")
+
+        if 'gilmore' not in self._model:
             result *= (1. + zz) * (1. + zz) * (1. + zz)
 
         result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40
-
-        print(kernel)
-        print(result)
 
         return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value

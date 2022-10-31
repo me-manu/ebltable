@@ -332,7 +332,7 @@ class EBL(GridInterpolator):
 
         n = self.ebl_array(z, l)
         # convert nuInu to photon density in 1 / J / m^3
-        n = 4.* np.pi / c.c.value / e_J**2. * n  * 1e-9
+        n = 4. * np.pi / c.c.value / e_J**2. * n * 1e-9
         # convert photon density in 1 / eV / cm^3 and return
         return n * c.e.value * 1e-6
 
@@ -473,11 +473,13 @@ class EBL(GridInterpolator):
         """
         if np.isscalar(ETeV):
             ETeV = np.array([ETeV])
-        elif type(ETeV) == list or type(ETeV) == tuple:
+
+        elif ETeV is Iterable:
             ETeV = np.array(ETeV)
+
         if np.isscalar(z):
             z = np.array([z])
-        elif type(z) == list or type(z) == tuple:
+        elif z is Iterable:
             z = np.array(z)
 
         # planck mass in eV
@@ -499,6 +501,7 @@ class EBL(GridInterpolator):
         zz, EE_TeV = np.meshgrid(z, ETeV)  # m x n dimensional
         EEzz_eV = EE_TeV * 1e12 * (1. + zz)
         ethr_eV = m_e_eV * m_e_eV / EEzz_eV
+
         if LIV_scale:
             ethr_eV *= 1. + (EEzz_eV / ELIV_eV)**(nLIV + 2.)
 

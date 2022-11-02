@@ -14,6 +14,22 @@ import warnings
 import os
 # ------------------------------------------------------------#
 
+models = ('franceschini',
+          'franceschini2017',
+          'saldana-lopez',
+          'saldana-lopez-upper',
+          'saldana-lopez-lower',
+          'kneiske',
+          'finke',
+          'dominguez',
+          'dominguez-upper',
+          'dominguez-lower',
+          'inoue',
+          'inoue-low-pop3',
+          'inoue-up-pop3',
+          'gilmore',
+          'gilmore-fixed'
+          )
 
 class OptDepth(object):
     """
@@ -89,7 +105,12 @@ class OptDepth(object):
     def tau(self, tau, kx=1, ky=1):
         self._tau = tau
         self._tauSpline = RBSpline(self._logEGeV, self._z, self._tau, kx=kx, ky=ky)
-        return 
+        return
+
+    @staticmethod
+    def get_models():
+        """Get the available EBL model strings and return them as a list"""
+        return models
 
     @staticmethod
     def readmodel(model, kx=1, ky=1, pad_zeros=True):

@@ -1,5 +1,5 @@
 """
-Class to read EBL models of Kneiske & Dole 2010 and Franceschini et al. 2008
+Class to read EBL models.
 """
 
 # ---- IMPORTS -----------------------------------------------#
@@ -16,9 +16,25 @@ import astropy.units as u
 import astropy.constants as c
 from astropy.cosmology import Planck15 as cosmo
 from scipy.special import spence  # equals gsl_sf_dilog(1-z)
-
-
 # ------------------------------------------------------------#
+
+# planck mass in eV
+Mpl_eV = (np.sqrt(c.hbar * c.c / c.G) * c.c ** 2.).to('eV').value
+# electron mass in eV
+m_e_eV = (c.m_e * c.c ** 2.).to('eV').value
+# Available models
+models = ('franceschini',
+          'kneiske',
+          'dominguez',
+          'dominguez-upper',
+          'dominguez-lower',
+          'saldana-lopez',
+          'saldana-lopez-err',
+          'gilmore',
+          'gilmore-fixed',
+          'finke',
+          'cuba')
+
 def Pkernel(x):
     """Kernel function from Biteau & Williams (2015), Eq. (7)"""
 
@@ -115,7 +131,12 @@ class EBL(object):
         nuInu[nuInu == 0.] = 1e-40
         self._nuInu = np.log10(nuInu)
         self._eblSpline = RBSpline(self._loglmu, self._z, self._nuInu, kx=kx, ky=ky)
-        return 
+        return
+
+    @staticmethod
+    def get_models():
+        """Print the available EBL model strings and return them as a list"""
+        return models
 
     @staticmethod
     def readmodel(model, kx=1, ky=1):
@@ -527,11 +548,6 @@ class EBL(object):
             z = np.array([z])
         elif type(z) == list or type(z) == tuple:
             z = np.array(z)
-
-        # planck mass in eV
-        Mpl_eV = (np.sqrt(c.hbar * c.c / c.G) * c.c**2.).to('eV').value
-        # electron mass in eV
-        m_e_eV = (c.m_e * c.c**2.).to('eV').value
 
         # max energy of EBL template in eV
         emax_eV = (c.h * c.c / (10.**np.min(self.loglmu) * u.um)).to('eV').value

@@ -153,7 +153,7 @@ class OptDepth(object):
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0], 'data/')
 
-        if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke' \
+        if model == 'kneiske' or model.find('dominguez') >= 0 or model.find('finke') >= 0 \
             or model == 'franceschini2017' or model.find('saldana') >= 0.:
 
             if model == 'kneiske':
@@ -177,7 +177,7 @@ class OptDepth(object):
             elif model == 'saldana-lopez-lower':
                 file_name = os.path.join(ebl_file_path, 'tau_low_saldana-lopez21.out')
             else:
-                raise ValueError("Unknown EBL model chosen!")
+                raise ValueError(f"Unknown EBL model {model} chosen!")
 
             data = np.loadtxt(file_name)
             z = data[0,1:]
@@ -213,6 +213,7 @@ class OptDepth(object):
             EGeV = data[1:,0]*1e3
 
         elif model.find('gilmore') >= 0:
+
             if model == 'gilmore':
                 file_name = os.path.join(ebl_file_path , 'opdep_fiducial.dat')
             elif model == 'gilmore-fixed':

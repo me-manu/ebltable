@@ -9,21 +9,7 @@ class TestOptDepth:
     def test_models(self):
 
         # all implemented models
-        models = ['franceschini',
-                  'franceschini2017',
-                  'saldana-lopez',
-                  'saldana-lopez-upper',
-                  'saldana-lopez-lower',
-                  'kneiske',
-                  'finke',
-                  'dominguez',
-                  'dominguez-upper',
-                  'dominguez-lower',
-                  'inoue',
-                  'inoue-low-pop3',
-                  'inoue-up-pop3',
-                  'gilmore',
-                  'gilmore-fixed']
+        models = OptDepth.get_models()
 
         ETeV = np.logspace(-2., 1.5, 100)
         z = np.arange(0.05, 0.75, 0.05)

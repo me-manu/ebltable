@@ -12,17 +12,7 @@ class TestEBL:
     def test_models(self):
 
         # all implemented models
-        models = ['franceschini',
-                  'saldana-lopez',
-                  'saldana-lopez-err',
-                  'kneiske',
-                  'finke',
-                  'dominguez',
-                  'dominguez-upper',
-                  'dominguez-lower',
-                  'cuba',
-                  'gilmore',
-                  'gilmore-fixed']
+        models = EBL.get_models()
 
         z = np.arange(0., 4.2, 0.2)
         lmu = np.logspace(-1, 3, 4*16)

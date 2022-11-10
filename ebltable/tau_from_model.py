@@ -21,6 +21,7 @@ models = ('franceschini',
           'saldana-lopez-lower',
           'kneiske',
           'finke',
+          'finke2022',
           'dominguez',
           'dominguez-upper',
           'dominguez-lower',
@@ -140,6 +141,7 @@ class OptDepth(object):
         saldana-lopez-lower  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
         kneiske              Kneiske & Dole (2010)
         finke                Finke et al.(2010)                http://www.phy.ohiou.edu/~finke/EBL/
+        finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
         dominguez            Dominguez et al. (2011)
         dominguez-upper      Dominguez et al. (2011) upper uncertainty
         dominguez-lower      Dominguez et al. (2011) lower uncertainty
@@ -164,6 +166,8 @@ class OptDepth(object):
                 file_name = os.path.join(ebl_file_path, 'tau_lower_dominguez11_cta.out')
             elif model == 'finke':
                 file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
+            elif model == 'finke2022':
+                file_name = os.path.join(ebl_file_path, 'tau_model_A_Finke2022.dat')
             elif model == 'franceschini2017':
                 file_name = os.path.join(ebl_file_path, 'tau_fran17.dat')
             elif model == 'saldana-lopez':

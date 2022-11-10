@@ -33,6 +33,7 @@ models = ('franceschini',
           'gilmore',
           'gilmore-fixed',
           'finke',
+          'finke2022',
           'cuba')
 
 def Pkernel(x):
@@ -167,6 +168,7 @@ class EBL(object):
                 gilmore                Gilmore et al. (2012)                (fiducial model)
                 gilmore-fixed   Gilmore et al. (2012)                (fixed model)
                 finke                Finke et al. (2012)                (model C) http://www.phy.ohiou.edu/~finke/EBL/
+                finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
                 cuba                Haardt & Madua (2012)                http://www.ucolick.org/~pmadau/CUBA/HOME.html
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
@@ -189,6 +191,8 @@ class EBL(object):
             file_name = join(ebl_file_path , 'CUBA_UVB.dat')
         elif model == 'finke':
             file_name = join(ebl_file_path , 'ebl_modelC_Finke.txt')
+        elif model == 'finke2022':
+            file_name = os.path.join(ebl_file_path, 'EBL_nuInu_model_A_Finke2022.dat')
         elif model == 'saldana-lopez':
             file_name = join(ebl_file_path, 'ebl_saldana21_comoving.txt')
         elif model == 'saldana-lopez-err':
@@ -199,18 +203,18 @@ class EBL(object):
         data = np.loadtxt(file_name)
 
         if model.find('gilmore') >= 0:
-            z = data[0,1:]
-            lmu = data[1:,0] * 1e-4 # convert from Angstrom to micro meter
-            nuInu = data[1:,1:]                        
+            z = data[0, 1:]
+            lmu = data[1:, 0] * 1e-4 # convert from Angstrom to micro meter
+            nuInu = data[1:, 1:]
             nuInu[nuInu == 0.] = 1e-20 * np.ones(np.sum(nuInu == 0.))
             
             # convert from ergs/s/cm^2/Ang/sr to nW/m^2/sr
             nuInu = (nuInu.T * data[1:,0]).T * 1e4 * 1e-7 * 1e9        
 
         elif model == 'cuba':
-            z = data[0,1:-1]
-            lmu = data[1:,0] * 1e-4
-            nuInu = data[1:,1:-1]
+            z = data[0, 1:-1]
+            lmu = data[1:, 0] * 1e-4
+            nuInu = data[1:, 1:-1]
 
             # replace zeros by 1e-40
             idx = np.where(data[1:,1:-1] == 0.)
@@ -226,9 +230,9 @@ class EBL(object):
                 lmu[i+1] = (lmu[i + 2] + lmu[i]) / 2.
 
         else:
-            z = data[0,1:]
-            lmu = data[1:,0]
-            nuInu = data[1:,1:]
+            z = data[0, 1:]
+            lmu = data[1:, 0]
+            nuInu = data[1:, 1:]
             if model == 'finke': 
                 lmu = lmu[::-1] * 1e-4
                 nuInu = nuInu[::-1]

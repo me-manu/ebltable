@@ -1,21 +1,15 @@
-"""
-Class to read EBL models.
-"""
-
 # ---- IMPORTS -----------------------------------------------#
+from __future__ import absolute_import, division, print_function
 import numpy as np
 import os
-from scipy.interpolate import RectBivariateSpline as RBSpline
-from scipy.interpolate import UnivariateSpline as USpline
-from astropy.io import fits
-from astropy.table import Table,Column 
-from scipy.integrate import simps
-import warnings
-from os.path import join
 import astropy.units as u
 import astropy.constants as c
+from collections.abc import Iterable
+from scipy.integrate import simps
+from os.path import join
 from astropy.cosmology import Planck15 as cosmo
 from scipy.special import spence  # equals gsl_sf_dilog(1-z)
+from .interpolate import GridInterpolator
 # ------------------------------------------------------------#
 
 # planck mass in eV
@@ -36,39 +30,32 @@ models = ('franceschini',
           'finke2022',
           'cuba')
 
-def Pkernel(x):
+# ------------------------------------------------------------#
+def p_kernel(x):
     """Kernel function from Biteau & Williams (2015), Eq. (7)"""
 
-    m = (x < 0.) & (x >= 1.)
     x[x < 0.] = np.zeros(np.sum(x < 0.))
     x[x >= 1.] = np.zeros(np.sum(x >= 1.))
     x = np.sqrt(x)
 
-    result = np.log(2.) * np.log(2.)  - np.pi *np.pi / 6. \
-            + 2. * spence(0.5 + 0.5 * x) - (x + x*x*x) / (1. - x*x) \
-            + (np.log(1. + x) - 2. * np.log(2.)) * np.log(1. - x) \
-            + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
-            + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
+    result = np.log(2.) * np.log(2.) - np.pi * np.pi / 6. \
+        + 2. * spence(0.5 + 0.5 * x) - (x + x*x*x) / (1. - x*x) \
+        + (np.log(1. + x) - 2. * np.log(2.)) * np.log(1. - x) \
+        + 0.5 * (np.log(1. - x) * np.log(1. - x) - np.log(1. + x) * np.log(1. + x)) \
+        + 0.5 * (1. + x*x*x*x) / (1. - x*x) * (np.log(1. + x) - np.log(1. - x))
+
     result[x <= 0.] = np.zeros(np.sum(x <= 0.))
     result[x >= 1.] = np.zeros(np.sum(x >= 1.))
+
     return result
 
 
-class EBL(object):
+class EBL(GridInterpolator):
     """
     Class to calculate EBL intensities from EBL models.
-    
-    Important: if using the predefined model files, the path to the model files has to be set through the 
-    environment variable EBL_FILE_PATH
-
-    Arguments
-    ---------
-    z:                redshift, m-dim numpy array, given by model file
-    loglmu:        log wavelength, n-dim numpy array, given by model file, in mu m
-    nuInu:        nxm - dim array with EBL intensity in nW m^-2 sr^-1, given by model file
     """
 
-    def __init__(self, z, lmu, nuInu, kx=1, ky=1, model=''):
+    def __init__(self, z, lmu, nuInu, kx=1, ky=1, **kwargs):
         """
         Initiate EBL photon density model class. 
 
@@ -83,60 +70,21 @@ class EBL(object):
         nuInu: `~numpy.ndarray` or list
             n x m array with EBL photon density in nW / sr / m^2
 
-        {options}
-
         kx: int
             order of interpolation spline along energy axis, default: 2
+
         ky: int
             order of interpolation spline along energy axis, default: 2
+
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
-        self._z = np.array(z)
-
-        lmu[lmu == 0.] = 1e-40
-        self._loglmu = np.log10(lmu)
-
-        nuInu[nuInu == 0.] = 1e-40
-        self._nuInu = np.log10(nuInu)
-
-        self._eblSpline = RBSpline(self._loglmu, self._z, self._nuInu, kx=kx, ky=ky)
-        self._model = model
-        return
-
-    @property
-    def z(self):
-        return self._z
-
-    @z.setter
-    def z(self, z, kx=1, ky=1):
-        self._z = z
-        self._eblSpline = RBSpline(self._loglmu, self._z, self._nuInu, kx=kx, ky=ky)
-        return 
-
-    @property
-    def loglmu(self):
-        return self._loglmu
-
-    @loglmu.setter
-    def loglmu(self, lmu, kx=1, ky=1):
-        lmu[lmu == 0.] = 1e-40
-        self._loglmu = np.log10(lmu)
-        self._eblSpline = RBSpline(self._loglmu, self._z, self._nuInu, kx=kx, ky=ky)
-        return 
-
-    @property
-    def nuInu(self):
-        return self._nuInu
-
-    @nuInu.setter
-    def nuInu(self, nuInu, kx=1, ky=1):
-        nuInu[nuInu == 0.] = 1e-40
-        self._nuInu = np.log10(nuInu)
-        self._eblSpline = RBSpline(self._loglmu, self._z, self._nuInu, kx=kx, ky=ky)
-        return
-
+        self._model = kwargs.pop('model', None)
+        super(EBL, self).__init__(lmu, z, nuInu, logx=True, logZ=True, kx=kx, ky=ky, **kwargs)
+        
     @staticmethod
     def get_models():
-        """Print the available EBL model strings and return them as a list"""
+        """Get the available EBL model strings and return them as a list"""
         return models
 
     @staticmethod
@@ -174,21 +122,21 @@ class EBL(object):
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
         if model == 'kneiske':
-            file_name = join(ebl_file_path , 'ebl_nuFnu_tanja.dat')
+            file_name = join(ebl_file_path, 'ebl_nuFnu_tanja.dat')
         elif model == 'franceschini':
-            file_name = join(ebl_file_path , 'ebl_franceschini.dat')
+            file_name = join(ebl_file_path, 'ebl_franceschini.dat')
         elif model == 'dominguez':
-            file_name = join(ebl_file_path , 'ebl_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_dominguez11.out')
         elif model == 'dominguez-upper':
-            file_name = join(ebl_file_path , 'ebl_upper_uncertainties_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_upper_uncertainties_dominguez11.out')
         elif model == 'dominguez-lower':
-            file_name = join(ebl_file_path , 'ebl_lower_uncertainties_dominguez11.out')
+            file_name = join(ebl_file_path, 'ebl_lower_uncertainties_dominguez11.out')
         elif model == 'gilmore':
-            file_name = join(ebl_file_path , 'eblflux_fiducial.dat')
+            file_name = join(ebl_file_path, 'eblflux_fiducial.dat')
         elif model == 'gilmore-fixed':
-            file_name = join(ebl_file_path , 'eblflux_fixed.dat')
+            file_name = join(ebl_file_path, 'eblflux_fixed.dat')
         elif model == 'cuba':
-            file_name = join(ebl_file_path , 'CUBA_UVB.dat')
+            file_name = join(ebl_file_path, 'CUBA_UVB.dat')
         elif model == 'finke':
             file_name = join(ebl_file_path , 'ebl_modelC_Finke.txt')
         elif model == 'finke2022':
@@ -204,12 +152,12 @@ class EBL(object):
 
         if model.find('gilmore') >= 0:
             z = data[0, 1:]
-            lmu = data[1:, 0] * 1e-4 # convert from Angstrom to micro meter
+            lmu = data[1:, 0] * 1e-4  # convert from Angstrom to micro meter
             nuInu = data[1:, 1:]
             nuInu[nuInu == 0.] = 1e-20 * np.ones(np.sum(nuInu == 0.))
             
             # convert from ergs/s/cm^2/Ang/sr to nW/m^2/sr
-            nuInu = (nuInu.T * data[1:,0]).T * 1e4 * 1e-7 * 1e9        
+            nuInu = (nuInu.T * data[1:, 0]).T * 1e4 * 1e-7 * 1e9
 
         elif model == 'cuba':
             z = data[0, 1:-1]
@@ -217,7 +165,7 @@ class EBL(object):
             nuInu = data[1:, 1:-1]
 
             # replace zeros by 1e-40
-            idx = np.where(data[1:,1:-1] == 0.)
+            idx = np.where(data[1:, 1:-1] == 0.)
             nuInu[idx] = np.ones(np.sum(nuInu == 0.)) * 1e-20
 
             # in erg / cm^2 / s / sr
@@ -240,9 +188,9 @@ class EBL(object):
         return EBL(z, lmu, nuInu, model=model, kx=kx, ky=ky)
 
     @staticmethod
-    def readascii(file_name, kx=1, ky=1):
+    def readascii(file_name, kx=1, ky=1, **kwargs):
         """
-        Read in an EBL model file from an arbritrary file.
+        Read in an EBL model file from an arbitrary file.
 
         Parameters
         ----------
@@ -253,16 +201,18 @@ class EBL(object):
             first row contains the redshift values.
             The remaining values are the EBL photon density values in nW / m^2 / sr.
             The [0,0] entry will be ignored.
+
         kx: int
             Spline order in x direction
+
         ky: int
             Spline order in y direction
+
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
-        data = np.loadtxt(file_name)
-        z = data[0,1:]
-        nuInu = data[1:,1:]
-        lmu = data[1:,0]
-        return EBL(z, lmu, nuInu, kx=kx, ky=ky)
+        lmu, z, nuInu= GridInterpolator._read_ascii(file_name)
+        return EBL(z, lmu, nuInu, kx=kx, ky=ky, **kwargs)
 
     @staticmethod
     def readfits(file_name,
@@ -271,7 +221,8 @@ class EBL(object):
                  zcol='REDSHIFT',
                  eblcol='EBL_DENS',
                  lcol='WAVELENGTH',
-                 kx=1, ky=1):
+                 kx=1, ky=1,
+                 **kwargs):
         """
         Read EBL photon density from a fits file using the astropy.io module
 
@@ -279,29 +230,43 @@ class EBL(object):
         ----------
         filename: str, 
             full path to fits file containing the opacities, redshifts, and energies
+
         hdu_nuInu_vs_z: str
             optional, name of hdu that contains `~astropy.Table` with redshifts and tau values
+
         hdu_wavelengths: str
             optional, name of hdu that contains `~astropy.Table` with wavelegnths
+
         zcol: str
             optional, name of column of `~astropy.Table` with redshift values
+
         eblcol: str
             optional, name of column of `~astropy.Table` with EBL density values
+
         lcol: str
             optional, name of column of `~astropy.Table` with wavelength values
+
         kx: int
             Spline order in x direction
+
         ky: int
             Spline order in y direction
-        """
-        t = Table.read(file_name, hdu=hdu_nuInu_vs_z)
-        z = t[zcol].data
-        ebl = t[eblcol].data
-        t2 = Table.read(file_name, hdu=hdu_wavelength)
-        lmu = t2[lcol].data * t2[lcol].unit
-        return EBL(z, lmu.to(u.micrometer).value, ebl.T, kx=kx, ky=ky)
 
-    def writefits(self, filename, z, lmu):
+        kwargs: dict
+            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+        """
+
+        lmu, z, nuInu = GridInterpolator._read_fits(file_name,
+                                                    hdu_name_grid=hdu_nuInu_vs_z,
+                                                    hdu_name_x=hdu_wavelength,
+                                                    xcol_name=lcol,
+                                                    ycol_name=zcol,
+                                                    Zcol_name=eblcol,
+                                                    xtarget_unit="um")
+
+        return EBL(z, lmu, nuInu, kx=kx, ky=ky, **kwargs)
+
+    def writefits(self, filename, z, lmu, overwrite=True):
         """
         Write optical depth to a fits file using 
         the astropy table environment. 
@@ -310,23 +275,24 @@ class EBL(object):
         ----------
         filename: str,
              full file path for output fits file
+
         z: array-like
             source redshift, m-dimensional
+
         lmu: array-like
             wavelenghts in micrometer, n-dimensional
+
+        overwrite: bool
+            Overwrite existing file.
         """
-        t = Table([z,self.ebl_array(z,lmu)], names=('REDSHIFT', 'EBL_DENS'))
-        t2 = Table()
-        t2['WAVELENGTH'] = Column(lmu, unit='micrometer')
-
-        hdulist = fits.HDUList([fits.PrimaryHDU(),
-                                fits.table_to_hdu(t),
-                                fits.table_to_hdu(t2)])
-
-        hdulist[1].name = 'NUINU_VS_Z'
-        hdulist[2].name = 'WAVELENGTHS'
-
-        hdulist.writeto(filename, overwrite=True)
+        self._write_fits(filename, lmu, z,
+                         hdu_name_grid="NUINU_VS_Z",
+                         hdu_name_x="WAVELENGTHS",
+                         xunit="micrometer",
+                         xcol_name="WAVELENGTH",
+                         ycol_name="REDSHIFT",
+                         Zcol_name="EBL_DENS",
+                         xtarget_unit="micrometer", overwrite=overwrite)
         return
 
     def ebl_array(self, z, lmu):
@@ -344,7 +310,7 @@ class EBL(object):
 
         Returns
         -------
-        (n x m)-dim `~numpy.ndarray` with corresponding (nu I nu) values
+        (m x n)-dim `~numpy.ndarray` with corresponding (nu I nu) values
 
         Notes
         -----
@@ -352,30 +318,8 @@ class EBL(object):
         self._z[0] is used and RuntimeWarning is issued.
 
         """
-        if np.isscalar(lmu):
-            lmu = np.array([lmu])
-        elif type(lmu) == list:
-            lmu = np.array(lmu)
-        if np.isscalar(z):
-            z = np.array([z])
-        elif type(z) == list:
-            z = np.array(z)
-
-        if np.any(z < self._z[0]): warnings.warn(
-            "Warning: a z value is below interpolation range, zmin = {0:.2f}".format(self._z[0]), 
-            RuntimeWarning)
-
-        result = np.zeros((z.shape[0],lmu.shape[0]))
-        tt = np.zeros((z.shape[0],lmu.shape[0]))
-
-        args_z = np.argsort(z)
-        args_l = np.argsort(lmu)
-
-        tt[args_z,:] = self._eblSpline(np.log10(np.sort(lmu)),
-                                       np.sort(z)).T  # Spline interpolation requires sorted lists
-        result[:,args_l] = tt
-
-        return np.squeeze(np.power(10., result))
+        result = self.evaluate(lmu, z)
+        return result
 
     def n_array(self, z, EeV):
         """
@@ -399,11 +343,12 @@ class EBL(object):
         """
         if np.isscalar(EeV):
             EeV = np.array([EeV])
-        elif type(EeV) == list or type(EeV) == tuple:
+        elif EeV is Iterable:
             EeV = np.array(EeV)
+
         if np.isscalar(z):
             z = np.array([z])
-        elif type(z) == list or type(z) == tuple:
+        elif z is Iterable:
             z = np.array(z)
 
         # convert energy in eV to wavelength in micron
@@ -414,7 +359,7 @@ class EBL(object):
 
         n = self.ebl_array(z, l)
         # convert nuInu to photon density in 1 / J / m^3
-        n = 4.* np.pi / c.c.value / e_J**2. * n  * 1e-9
+        n = 4. * np.pi / c.c.value / e_J**2. * n * 1e-9
         # convert photon density in 1 / eV / cm^3 and return
         return n * c.e.value * 1e-6
 
@@ -438,9 +383,9 @@ class EBL(object):
         -------
         Float with integrated nuInu value
         """
-        logl = np.linspace(np.log10(lmin),np.log10(lmax),steps)
-        lnl = np.log(np.linspace(lmin,lmax,steps))
-        ln_Il = np.log(10.) * (self.ebl_array(z,10.**logl))         # note: nuInu = lambda I lambda
+        logl = np.linspace(np.log10(lmin), np.log10(lmax), steps)
+        lnl = np.log(np.linspace(lmin, lmax, steps))
+        ln_Il = np.log(10.) * (self.ebl_array(z, 10.**logl))         # note: nuInu = lambda I lambda
         result = simps(ln_Il, lnl)
         return result
 
@@ -459,23 +404,32 @@ class EBL(object):
         ----------
         z0: float
             source redshift
+
         ETeV: array-like
             Energies in TeV, n-dimensional
+
         H0: float,
             Hubble constant in km / Mpc / s. Default: 70.
+
         OmegaM: float,
             critical density of matter at z=0. Default: 0.3
+
         OmegaL: float,
             critical density of dark energy. Default: 0.7
+
         steps_z: int
             intergration steps for redshift (default : 50)
+
         steps_e: int
             number of integration steps for integration over EBL density (default: 60)
+
         LIV_scale: float
             Lorentz invariance violation parameter (quantum gravity scale),
             if 0. (default), do not include LIV
+
         nLIV: int
             order of LIV, only applied if LIV_scale > 0, default: 1
+
         egamma_LIV: bool
             if true, apply LIV to both electrons and photons
 
@@ -490,7 +444,7 @@ class EBL(object):
         """
         if np.isscalar(ETeV):
             ETeV = np.array([ETeV])
-        elif type(ETeV) == list or type(ETeV) == tuple:
+        elif ETeV is Iterable:
             ETeV = np.array(ETeV)
 
         z_array = np.linspace(0., z0, steps_z)
@@ -546,15 +500,17 @@ class EBL(object):
         """
         if np.isscalar(ETeV):
             ETeV = np.array([ETeV])
-        elif type(ETeV) == list or type(ETeV) == tuple:
+
+        elif ETeV is Iterable:
             ETeV = np.array(ETeV)
+
         if np.isscalar(z):
             z = np.array([z])
-        elif type(z) == list or type(z) == tuple:
+        elif z is Iterable:
             z = np.array(z)
 
         # max energy of EBL template in eV
-        emax_eV = (c.h * c.c / (10.**np.min(self.loglmu) * u.um)).to('eV').value
+        emax_eV = (c.h * c.c / (10.**np.min(self.x) * u.um)).to('eV').value
 
         # defines the effective energy scale for the LIV modification
         if LIV_scale:
@@ -567,6 +523,7 @@ class EBL(object):
         zz, EE_TeV = np.meshgrid(z, ETeV)  # m x n dimensional
         EEzz_eV = EE_TeV * 1e12 * (1. + zz)
         ethr_eV = m_e_eV * m_e_eV / EEzz_eV
+
         if LIV_scale:
             ethr_eV *= 1. + (EEzz_eV / ELIV_eV)**(nLIV + 2.)
 
@@ -581,9 +538,11 @@ class EBL(object):
                     b3d_array[i,j] = ethr_eV[i,j] / e3d_array[i,j] 
                     n3d_array[i,j] = self.n_array(zz[i,j], e3d_array[i,j])
 
-        kernel = b3d_array * b3d_array * n3d_array * Pkernel(1. - b3d_array) * e3d_array
+        kernel = b3d_array * b3d_array * n3d_array * p_kernel(1. - b3d_array) * e3d_array
+
         result = simps(kernel, np.log(e3d_array), axis = 2)
-        if self._model.find('gilmore') < 0:
+
+        if 'gilmore' not in self._model:
             result *= (1. + zz) * (1. + zz) * (1. + zz)
 
         result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40

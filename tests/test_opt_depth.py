@@ -34,10 +34,11 @@ class TestOptDepth:
             tau = OptDepth.readmodel(model=m, kx=1, ky=1)
 
             # test the setters and getters
-            tau.z = tau.z
-            tau.logEGeV = 10.**tau.logEGeV
-            tau.tau = tau.tau
+            tau.x = 10.**tau.x  # energy, log is done in setter function
+            tau.y = tau.y  # redshift
+            tau.Z = tau.Z  # opt depth values
 
+            # test zero case
             assert_allclose(tau.opt_depth(0., ETeV), np.zeros_like(ETeV), atol=1e-6)
 
             # test the optical depth functions
@@ -56,4 +57,4 @@ class TestOptDepth:
         tau.writefits('test.fits', z=z, ETeV=ETeV)
         tau_new = OptDepth.readfits('test.fits')
 
-        assert_allclose(tau_new.tau.T, tau_val, atol=0.)
+        assert_allclose(tau_new.Z.T, tau_val, atol=0.)

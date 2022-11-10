@@ -10,7 +10,25 @@ from os.path import join
 from astropy.cosmology import Planck15 as cosmo
 from scipy.special import spence  # equals gsl_sf_dilog(1-z)
 from .interpolate import GridInterpolator
+# ------------------------------------------------------------#
 
+# planck mass in eV
+Mpl_eV = (np.sqrt(c.hbar * c.c / c.G) * c.c ** 2.).to('eV').value
+# electron mass in eV
+m_e_eV = (c.m_e * c.c ** 2.).to('eV').value
+# Available models
+models = ('franceschini',
+          'kneiske',
+          'dominguez',
+          'dominguez-upper',
+          'dominguez-lower',
+          'saldana-lopez',
+          'saldana-lopez-err',
+          'gilmore',
+          'gilmore-fixed',
+          'finke',
+          'finke2022',
+          'cuba')
 
 # ------------------------------------------------------------#
 def p_kernel(x):
@@ -63,6 +81,11 @@ class EBL(GridInterpolator):
         """
         self._model = kwargs.pop('model', None)
         super(EBL, self).__init__(lmu, z, nuInu, logx=True, logZ=True, kx=kx, ky=ky, **kwargs)
+        
+    @staticmethod
+    def get_models():
+        """Get the available EBL model strings and return them as a list"""
+        return models
 
     @staticmethod
     def readmodel(model, kx=1, ky=1):
@@ -93,6 +116,7 @@ class EBL(GridInterpolator):
                 gilmore                Gilmore et al. (2012)                (fiducial model)
                 gilmore-fixed   Gilmore et al. (2012)                (fixed model)
                 finke                Finke et al. (2012)                (model C) http://www.phy.ohiou.edu/~finke/EBL/
+                finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
                 cuba                Haardt & Madua (2012)                http://www.ucolick.org/~pmadau/CUBA/HOME.html
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
@@ -114,7 +138,9 @@ class EBL(GridInterpolator):
         elif model == 'cuba':
             file_name = join(ebl_file_path, 'CUBA_UVB.dat')
         elif model == 'finke':
-            file_name = join(ebl_file_path, 'ebl_modelC_Finke.txt')
+            file_name = join(ebl_file_path , 'ebl_modelC_Finke.txt')
+        elif model == 'finke2022':
+            file_name = os.path.join(ebl_file_path, 'EBL_nuInu_model_A_Finke2022.dat')
         elif model == 'saldana-lopez':
             file_name = join(ebl_file_path, 'ebl_saldana21_comoving.txt')
         elif model == 'saldana-lopez-err':
@@ -482,11 +508,6 @@ class EBL(GridInterpolator):
             z = np.array([z])
         elif z is Iterable:
             z = np.array(z)
-
-        # planck mass in eV
-        Mpl_eV = (np.sqrt(c.hbar * c.c / c.G) * c.c**2.).to('eV').value
-        # electron mass in eV
-        m_e_eV = (c.m_e * c.c**2.).to('eV').value
 
         # max energy of EBL template in eV
         emax_eV = (c.h * c.c / (10.**np.min(self.x) * u.um)).to('eV').value

@@ -7,6 +7,23 @@ from .interpolate import GridInterpolator
 import os
 # ------------------------------------------------------------#
 
+models = ('franceschini',
+          'franceschini2017',
+          'saldana-lopez',
+          'saldana-lopez-upper',
+          'saldana-lopez-lower',
+          'kneiske',
+          'finke',
+          'finke2022',
+          'dominguez',
+          'dominguez-upper',
+          'dominguez-lower',
+          'inoue',
+          'inoue-low-pop3',
+          'inoue-up-pop3',
+          'gilmore',
+          'gilmore-fixed'
+          )
 
 class OptDepth(GridInterpolator):
     """
@@ -41,6 +58,11 @@ class OptDepth(GridInterpolator):
         super(OptDepth, self).__init__(EGeV, z, tau, logx=True, kx=kx, ky=ky, **kwargs)
 
     @staticmethod
+    def get_models():
+        """Get the available EBL model strings and return them as a list"""
+        return models
+
+    @staticmethod
     def readmodel(model, kx=1, ky=1, pad_zeros=True):
         """
         Read in an EBL model from an EBL model file
@@ -68,6 +90,7 @@ class OptDepth(GridInterpolator):
         saldana-lopez-lower  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
         kneiske              Kneiske & Dole (2010)
         finke                Finke et al.(2010)                http://www.phy.ohiou.edu/~finke/EBL/
+        finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
         dominguez            Dominguez et al. (2011)
         dominguez-upper      Dominguez et al. (2011) upper uncertainty
         dominguez-lower      Dominguez et al. (2011) lower uncertainty
@@ -79,7 +102,7 @@ class OptDepth(GridInterpolator):
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0], 'data/')
 
-        if model == 'kneiske' or model.find('dominguez') >= 0 or model == 'finke' \
+        if model == 'kneiske' or model.find('dominguez') >= 0 or model.find('finke') >= 0 \
             or model == 'franceschini2017' or model.find('saldana') >= 0.:
 
             if model == 'kneiske':
@@ -92,6 +115,8 @@ class OptDepth(GridInterpolator):
                 file_name = os.path.join(ebl_file_path, 'tau_lower_dominguez11_cta.out')
             elif model == 'finke':
                 file_name = os.path.join(ebl_file_path, 'tau_modelC_Finke.txt')
+            elif model == 'finke2022':
+                file_name = os.path.join(ebl_file_path, 'tau_model_A_Finke2022.dat')
             elif model == 'franceschini2017':
                 file_name = os.path.join(ebl_file_path, 'tau_fran17.dat')
             elif model == 'saldana-lopez':
@@ -101,7 +126,7 @@ class OptDepth(GridInterpolator):
             elif model == 'saldana-lopez-lower':
                 file_name = os.path.join(ebl_file_path, 'tau_low_saldana-lopez21.out')
             else:
-                raise ValueError("Unknown EBL model chosen!")
+                raise ValueError(f"Unknown EBL model {model} chosen!")
 
             data = np.loadtxt(file_name)
             z = data[0,1:]
@@ -137,6 +162,7 @@ class OptDepth(GridInterpolator):
             EGeV = data[1:,0]*1e3
 
         elif model.find('gilmore') >= 0:
+
             if model == 'gilmore':
                 file_name = os.path.join(ebl_file_path, 'opdep_fiducial.dat')
             elif model == 'gilmore-fixed':

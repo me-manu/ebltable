@@ -11,6 +11,8 @@ notebooks/*.pdf
 notebooks/*.fits
 notebooks/.DS_Store
 *.fits
+notebooks/.ipynb_checkpoints/
+
 
 # C extensions
 *.so

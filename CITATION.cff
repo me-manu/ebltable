@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Meyer 
+    given-names: Manuel
+    orcid: https://orcid.org/0000-0002-0738-7581
+title: me-manu/ebltable: ebltable: Python packages to read in and interpolate tables of the Extragalactic Background Light
+version: v0.5
+doi: 10.5281/zenodo.7312062
+date-released: 2022-11-10

@@ -5,8 +5,9 @@ ebltable
     :target: https://pypi.org/project/ebltable/
     :alt: Latest Release
 
-.. image:: https://img.shields.io/travis/me-manu/ebltable
-    :target: https://img.shields.io/travis/me-manu/ebltable
+.. image:: https://app.travis-ci.com/me-manu/ebltable.svg?branch=master
+    :target: https://app.travis-ci.com/me-manu/ebltable
+    :alt: Build
 
 .. image:: https://img.shields.io/codecov/c/gh/me-manu/ebltable
     :target: https://codecov.io/gh/me-manu/ebltable/
@@ -19,6 +20,10 @@ ebltable
 .. image:: https://img.shields.io/github/issues/me-manu/ebltable
     :target: https://github.com/me-manu/ebltable/issues
     :alt: Issues
+
+.. image:: https://zenodo.org/badge/73200740.svg
+   :target: https://zenodo.org/badge/latestdoi/73200740
+   :alt: DOI
 
 Python packages to read in and interpolate tables for the photon density
 of the Extragalactic Background Light (EBL) and the resulting opacity

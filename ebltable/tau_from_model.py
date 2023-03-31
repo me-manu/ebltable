@@ -133,6 +133,8 @@ class OptDepth(GridInterpolator):
             tau = data[1:,1:]
             if model == 'kneiske':
                 EGeV = np.power(10.,data[1:,0])
+            elif model == 'finke2022':
+                EGeV = data[1:, 0]
             else:
                 EGeV = data[1:,0]*1e3
 

@@ -188,7 +188,7 @@ class EBL(GridInterpolator):
         return EBL(z, lmu, nuInu, model=model, kx=kx, ky=ky)
 
     @staticmethod
-    def readascii(file_name, kx=1, ky=1, **kwargs):
+    def readascii(file_name, kx=1, ky=1, model_name=None, **kwargs):
         """
         Read in an EBL model file from an arbitrary file.
 
@@ -208,11 +208,14 @@ class EBL(GridInterpolator):
         ky: int
             Spline order in y direction
 
+        model_name: str or None,
+            Name of EBL model
+
         kwargs: dict
             Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
         lmu, z, nuInu= GridInterpolator._read_ascii(file_name)
-        return EBL(z, lmu, nuInu, kx=kx, ky=ky, **kwargs)
+        return EBL(z, lmu, nuInu, model=model_name, kx=kx, ky=ky, **kwargs)
 
     @staticmethod
     def readfits(file_name,
@@ -222,6 +225,7 @@ class EBL(GridInterpolator):
                  eblcol='EBL_DENS',
                  lcol='WAVELENGTH',
                  kx=1, ky=1,
+                 model_name=None,
                  **kwargs):
         """
         Read EBL photon density from a fits file using the astropy.io module
@@ -252,6 +256,9 @@ class EBL(GridInterpolator):
         ky: int
             Spline order in y direction
 
+        model_name: str or None,
+            Name of EBL model
+
         kwargs: dict
             Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
         """
@@ -264,7 +271,7 @@ class EBL(GridInterpolator):
                                                     Zcol_name=eblcol,
                                                     xtarget_unit="um")
 
-        return EBL(z, lmu, nuInu, kx=kx, ky=ky, **kwargs)
+        return EBL(z, lmu, nuInu, model=model_name, kx=kx, ky=ky, **kwargs)
 
     def writefits(self, filename, z, lmu, overwrite=True):
         """

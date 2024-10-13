@@ -1,7 +1,7 @@
 # ---- IMPORTS -----------------------------------------------#
 from __future__ import absolute_import, division, print_function
 import numpy as np
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from scipy.interpolate import UnivariateSpline as USpline
 from .interpolate import GridInterpolator
 import os

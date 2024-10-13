@@ -5,7 +5,7 @@ import os
 import astropy.units as u
 import astropy.constants as c
 from collections.abc import Iterable
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from os.path import join
 from astropy.cosmology import Planck15 as cosmo
 from scipy.special import spence  # equals gsl_sf_dilog(1-z)
@@ -171,6 +171,9 @@ class EBL(GridInterpolator):
             # in erg / cm^2 / s / sr
             nuInu = (nuInu.T * c.c.value / (lmu * 1e-6)).T        
             nuInu *= 1e6        # in nW / m^2 /  sr
+
+            # change to comoving units
+            nuInu /= ((1. + z)**3.)[np.newaxis, :]
 
             # check where lmu is not strictly increasing
             idx = np.where(np.diff(lmu) == 0.)

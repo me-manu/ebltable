@@ -5,7 +5,7 @@ import os
 import astropy.units as u
 import astropy.constants as c
 from collections.abc import Iterable
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from os.path import join
 from astropy.cosmology import Planck15 as cosmo
 from scipy.special import spence  # equals gsl_sf_dilog(1-z)
@@ -171,6 +171,9 @@ class EBL(GridInterpolator):
             # in erg / cm^2 / s / sr
             nuInu = (nuInu.T * c.c.value / (lmu * 1e-6)).T        
             nuInu *= 1e6        # in nW / m^2 /  sr
+
+            # change to comoving units
+            nuInu /= ((1. + z)**3.)[np.newaxis, :]
 
             # check where lmu is not strictly increasing
             idx = np.where(np.diff(lmu) == 0.)
@@ -384,7 +387,7 @@ class EBL(GridInterpolator):
         lmax: float 
             maximum wavelength in micrometer
         steps: int
-            number of steps for simps integration
+            number of steps for simpson integration
 
         Returns
         -------
@@ -393,7 +396,7 @@ class EBL(GridInterpolator):
         logl = np.linspace(np.log10(lmin), np.log10(lmax), steps)
         lnl = np.log(np.linspace(lmin, lmax, steps))
         ln_Il = np.log(10.) * (self.ebl_array(z, 10.**logl))         # note: nuInu = lambda I lambda
-        result = simps(ln_Il, lnl)
+        result = simpson(ln_Il, x=lnl)
         return result
 
     def optical_depth(self, z0, ETeV,
@@ -466,7 +469,7 @@ class EBL(GridInterpolator):
         # dt / dz for a flat universe
         result *= 1. / ((1. + zz) * np.sqrt((1. + zz)**3. * OmegaM + OmegaL) )
 
-        result = simps(result, zz, axis=0)
+        result = simpson(result, x=zz, axis=0)
 
         # convert from km / Mpc / s to 1 / s
         H0 = (H0 * cosmo.H0.unit).to('1 / s').value
@@ -547,7 +550,7 @@ class EBL(GridInterpolator):
 
         kernel = b3d_array * b3d_array * n3d_array * p_kernel(1. - b3d_array) * e3d_array
 
-        result = simps(kernel, np.log(e3d_array), axis = 2)
+        result = simpson(kernel, x=np.log(e3d_array), axis = 2)
 
         if 'gilmore' not in self._model:
             result *= (1. + zz) * (1. + zz) * (1. + zz)

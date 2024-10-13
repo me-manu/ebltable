@@ -1,7 +1,7 @@
 # ---- IMPORTS -----------------------------------------------#
 from __future__ import absolute_import, division, print_function
 import numpy as np
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from scipy.interpolate import UnivariateSpline as USpline
 from .interpolate import GridInterpolator
 import os
@@ -393,5 +393,5 @@ class OptDepth(GridInterpolator):
         logE_array = np.array(logE_array)
         t_array = np.array(t_array)
         # return averaged tau value
-        return simps(func(np.exp(logE_array), **params) * t_array * np.exp(logE_array), logE_array, axis=1) / \
-                simps(func(np.exp(logE_array), **params) * np.exp(logE_array), logE_array, axis=1)
+        return simpson(func(np.exp(logE_array), **params) * t_array * np.exp(logE_array), x=logE_array, axis=1) / \
+                simpson(func(np.exp(logE_array), **params) * np.exp(logE_array), x=logE_array, axis=1)

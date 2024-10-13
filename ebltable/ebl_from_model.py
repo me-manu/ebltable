@@ -396,7 +396,7 @@ class EBL(GridInterpolator):
         logl = np.linspace(np.log10(lmin), np.log10(lmax), steps)
         lnl = np.log(np.linspace(lmin, lmax, steps))
         ln_Il = np.log(10.) * (self.ebl_array(z, 10.**logl))         # note: nuInu = lambda I lambda
-        result = simpson(ln_Il, lnl)
+        result = simpson(ln_Il, x=lnl)
         return result
 
     def optical_depth(self, z0, ETeV,
@@ -469,7 +469,7 @@ class EBL(GridInterpolator):
         # dt / dz for a flat universe
         result *= 1. / ((1. + zz) * np.sqrt((1. + zz)**3. * OmegaM + OmegaL) )
 
-        result = simpson(result, zz, axis=0)
+        result = simpson(result, x=zz, axis=0)
 
         # convert from km / Mpc / s to 1 / s
         H0 = (H0 * cosmo.H0.unit).to('1 / s').value
@@ -550,7 +550,7 @@ class EBL(GridInterpolator):
 
         kernel = b3d_array * b3d_array * n3d_array * p_kernel(1. - b3d_array) * e3d_array
 
-        result = simpson(kernel, np.log(e3d_array), axis = 2)
+        result = simpson(kernel, x=np.log(e3d_array), axis = 2)
 
         if 'gilmore' not in self._model:
             result *= (1. + zz) * (1. + zz) * (1. + zz)

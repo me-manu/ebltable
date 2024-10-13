@@ -10,8 +10,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='ebltable',
 
-    use_scm_version=True,  # This reads the version from Git tags
-    setup_requires=['setuptools_scm'],
+    version="0.6.3",
     include_package_data=True,
     package_data={'ebltable': ['data/*'], },
 

@@ -16,11 +16,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-        - name: Check out the code
-          uses: actions/checkout@v3
-          with:
-              fetch-depth: 0  # Fetch full history to get all tags
-              fetch-tags: true  # Ensure tags are fetched
+      - name: Check out the code
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0  # Fetch full history to get all tags
+            fetch-tags: true  # Ensure tags are fetched
 
       - name: Set up Python
         uses: actions/setup-python@v4

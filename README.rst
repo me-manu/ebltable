@@ -5,8 +5,8 @@ ebltable
     :target: https://pypi.org/project/ebltable/
     :alt: Latest Release
 
-.. image:: https://app.travis-ci.com/me-manu/ebltable.svg?branch=master
-    :target: https://app.travis-ci.com/me-manu/ebltable
+.. image:: https://github.com/me-manu/ebltable/actions/workflows/python_publish.yml/badge.svg
+    :target: https://github.com/me-manu/ebltable/actions/workflows/python_publish.yml
     :alt: Build
 
 .. image:: https://img.shields.io/codecov/c/gh/me-manu/ebltable

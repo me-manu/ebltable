@@ -393,5 +393,5 @@ class OptDepth(GridInterpolator):
         logE_array = np.array(logE_array)
         t_array = np.array(t_array)
         # return averaged tau value
-        return simps(func(np.exp(logE_array), **params) * t_array * np.exp(logE_array), logE_array, axis=1) / \
-                simps(func(np.exp(logE_array), **params) * np.exp(logE_array), logE_array, axis=1)
+        return simpson(func(np.exp(logE_array), **params) * t_array * np.exp(logE_array), logE_array, axis=1) / \
+                simpson(func(np.exp(logE_array), **params) * np.exp(logE_array), logE_array, axis=1)

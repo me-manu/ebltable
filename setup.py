@@ -11,10 +11,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='ebltable',
 
-    # Versions should comply with PEP440.  For a discussion on single-sourcing
-    # the version across setup.py and the project code, see
-    # http://packaging.python.org/en/latest/tutorial.html#version
     version=__version__,
+    use_scm_version=True,  # This reads the version from Git tags
+    setup_requires=['setuptools_scm'],
     include_package_data=True,
     package_data={'ebltable': ['data/*'], },
 

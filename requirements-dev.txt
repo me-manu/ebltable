@@ -1,0 +1,2 @@
+# Testing framework
+pytest>=7.0

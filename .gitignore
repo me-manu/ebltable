@@ -160,3 +160,5 @@ cython_debug/
 gammaALPs/_version.py
 .DS_Store
 RELEASE-VERSION
+docs/tutorials/*.ipynb
+docs/_build/

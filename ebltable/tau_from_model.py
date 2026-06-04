@@ -52,8 +52,8 @@ class OptDepth(GridInterpolator):
         ky: int
             order of interpolation spline along energy axis, default: 1
 
-        kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+        **kwargs
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         super(OptDepth, self).__init__(EGeV, z, tau, logx=True, kx=kx, ky=ky, **kwargs)
 
@@ -82,23 +82,62 @@ class OptDepth(GridInterpolator):
         Notes
         -----
         Supported EBL models:
-        Name:                Publication:
-        franceschini         Franceschini et al. (2008), http://www.astro.unipd.it/background/
-        franceschini2017     Franceschini et al. (2017)
-        saldana-lopez        Saldana-Lopez et al. (2021) https://www.ucm.es/blazars/ebl
-        saldana-lopez-upper  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
-        saldana-lopez-lower  Saldana-Lopez et al. (2021) upper uncertainty,  https://www.ucm.es/blazars/ebl
-        kneiske              Kneiske & Dole (2010)
-        finke                Finke et al.(2010)                http://www.phy.ohiou.edu/~finke/EBL/
-        finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
-        dominguez            Dominguez et al. (2011)
-        dominguez-upper      Dominguez et al. (2011) upper uncertainty
-        dominguez-lower      Dominguez et al. (2011) lower uncertainty
-        inoue                Inuoe et al. (2013), (baseline) http://www.slac.stanford.edu/~yinoue/Download.html
-        inoue-low-pop3       Inuoe et al. (2013), (low pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
-        inoue-up-pop3        Inuoe et al. (2013), (up pop 3) http://www.slac.stanford.edu/~yinoue/Download.html
-        gilmore              Gilmore et al. (2012) (fiducial model)
-        gilmore-fixed        Gilmore et al. (2012) (fixed model)
+
+        .. list-table::
+           :header-rows: 1
+           :widths: 25 45 30
+
+           * - Model name
+             - Publication
+             - Notes
+           * - ``franceschini``
+             - `Franceschini et al. (2008) <http://www.astro.unipd.it/background/>`_
+             -
+           * - ``franceschini2017``
+             - Franceschini & Rodighiero (2017)
+             -
+           * - ``saldana-lopez``
+             - `Saldana-Lopez et al. (2021) <https://www.ucm.es/blazars/ebl>`_
+             -
+           * - ``saldana-lopez-upper``
+             - `Saldana-Lopez et al. (2021) <https://www.ucm.es/blazars/ebl>`_
+             - upper uncertainty
+           * - ``saldana-lopez-lower``
+             - `Saldana-Lopez et al. (2021) <https://www.ucm.es/blazars/ebl>`_
+             - lower uncertainty
+           * - ``kneiske``
+             - Kneiske & Dole (2010)
+             -
+           * - ``finke``
+             - `Finke et al. (2010) <http://www.phy.ohiou.edu/~finke/EBL/>`_
+             - model C
+           * - ``finke2022``
+             - `Finke et al. (2022) <https://zenodo.org/record/7023073>`_
+             - model A
+           * - ``dominguez``
+             - Dominguez et al. (2011)
+             -
+           * - ``dominguez-upper``
+             - Dominguez et al. (2011)
+             - upper uncertainty
+           * - ``dominguez-lower``
+             - Dominguez et al. (2011)
+             - lower uncertainty
+           * - ``inoue``
+             - `Inoue et al. (2013) <http://www.slac.stanford.edu/~yinoue/Download.html>`_
+             - baseline
+           * - ``inoue-low-pop3``
+             - `Inoue et al. (2013) <http://www.slac.stanford.edu/~yinoue/Download.html>`_
+             - low pop III
+           * - ``inoue-up-pop3``
+             - `Inoue et al. (2013) <http://www.slac.stanford.edu/~yinoue/Download.html>`_
+             - upper pop III
+           * - ``gilmore``
+             - Gilmore et al. (2012)
+             - fiducial model
+           * - ``gilmore-fixed``
+             - Gilmore et al. (2012)
+             - fixed model
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0], 'data/')
 
@@ -208,7 +247,7 @@ class OptDepth(GridInterpolator):
             order of interpolation spline along energy axis, default: 1
 
         kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         EGeV, z, tau = GridInterpolator._read_ascii(file_name)
         return OptDepth(z, EGeV, tau, kx=kx, ky=ky, **kwargs)
@@ -231,31 +270,22 @@ class OptDepth(GridInterpolator):
         filename: str, 
             full path to fits file containing the opacities, redshifts, and energies
 
-        kwargs
-        ------
-        hdu_tau_vs_z: str, optional,
-            name of hdu that contains `~astropy.Table` with redshifts and tau values
-
-        hdu_energies: str, optional,
-            name of hdu that contains `~astropy.Table` with energies
-
-        zcol: str, optional,
-            name of column of `~astropy.Table` with redshift values
-
-        taucol: str, optional,
-            name of column of `~astropy.Table` with optical depth values
-
-        ecol: str, optional,
-            name of column of `~astropy.Table` with energy values
-
+        hdu_tau_vs_z: str, optional
+            name of HDU containing the redshift/tau table
+        hdu_energies: str, optional
+            name of HDU containing the energies table
+        zcol: str, optional
+            column name for redshift values
+        taucol: str, optional
+            column name for optical depth values
+        ecol: str, optional
+            column name for energy values
         kx: int
             order of interpolation spline along energy axis, default: 1
-
         ky: int
-            order of interpolation spline along energy axis, default: 1
-
-        kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            order of interpolation spline along redshift axis, default: 1
+        **kwargs
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
 
         EGeV, z, tau = GridInterpolator._read_fits(file_name,
@@ -311,8 +341,9 @@ class OptDepth(GridInterpolator):
 
         Returns
         -------
-        (m x n) `~numpy.ndarray` with corresponding optical depth values.
-        If z or E are scalars, the corresponding axis will be squeezed.
+        numpy.ndarray
+            (m x n) array with optical depth values.
+            If z or ETeV are scalars, the corresponding axis is squeezed.
 
         """
         result = self.evaluate(ETeV * 1e3, z)
@@ -322,12 +353,12 @@ class OptDepth(GridInterpolator):
         """
         Return Energy in GeV for redshift z and optical depth tau from interpolation
 
-        Parameter
-        ---------
-        z: float, 
+        Parameters
+        ----------
+        z: float
             redshift
 
-        tau: float, 
+        tau: float
             optical depth
 
         Returns
@@ -363,19 +394,17 @@ class OptDepth(GridInterpolator):
         Ebin: array-like
             Energies of bin bounds in TeV, n-dimensional
         func: function pointer
-            Spectrum, needs to be of the form func(Energy [TeV], **params), 
-            needs to except 2xn dim arrays
+            Spectrum, callable of the form ``func(Energy_TeV, **params)``
         params: dict,
             parameters that are past to func
 
-        kwargs
-        ------
-        Esteps: int, 
-                number of energy integration steps, default: 50
+        Esteps: int
+            number of energy integration steps, default: 50
 
         Returns
         -------
-        (n-1)-dim `~numpy.ndarray` with average tau values for each energy bin.
+        numpy.ndarray
+            (n-1)-dim array with average tau values for each energy bin.
 
         Notes
         -----

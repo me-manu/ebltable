@@ -43,6 +43,35 @@ You can use pip to install the package::
 Example scripts and notebooks are provided on the github page in the
 example/ and notebooks/ folder, https://github.com/me-manu/ebltable
 
+Adding a New EBL Model
+---------------------
+
+If you would like to have your EBL model included in ebltable, please
+`open a GitHub issue <https://github.com/me-manu/ebltable/issues>`_ and include
+the following information:
+
+1. **State your request** — briefly mention that you would like your model added.
+
+2. **Provide a paper reference** — include the full citation or a link to the
+   publication describing the EBL model (e.g. arXiv ID or DOI).
+
+3. **Upload the data files** — attach two ASCII tables to the issue:
+
+   *EBL intensity table*
+      An *n* × *m* matrix of EBL intensities νI\ :sub:`ν` [nW m\ :sup:`-2` sr\ :sup:`-1`]
+      for *n* redshifts and *m* wavelengths (in µm).
+      The table must include a column for *z* = 0.
+      See `ebl_saldana21_comoving.txt
+      <https://github.com/me-manu/ebltable/blob/main/ebltable/data/ebl_saldana21_comoving.txt>`_
+      for a worked example of the expected layout.
+
+   *Optical depth table*
+      An *n* × *m* matrix of optical depth values τ for *n* redshifts and
+      *m* gamma-ray energies (in TeV or GeV — please specify the unit).
+      See `ebl_dominguez11.out
+      <https://github.com/me-manu/ebltable/blob/main/ebltable/data/ebl_dominguez11.out>`_
+      for a worked example of the expected layout.
+
 License
 -------
 ebltable is distributed under the modified BSD License.

@@ -1,0 +1,8 @@
+numpy>=1.19
+scipy>=1.7
+astropy>=4.0
+ebltable
+nbsphinx>=0.8.5
+sphinx
+sphinx-rtd-theme
+ipython

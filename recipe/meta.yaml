@@ -1,0 +1,27 @@
+package:
+  name: ebltable  # Your package name
+  version: "0.6.3"  # Your package version
+
+source:
+  url: https://pypi.io/packages/source/e/ebltable/ebltable-0.6.3.tar.gz
+  sha256: 216943191aa2f2b7580a24d9652ec2ffc752c6a6374a0367e9168cd3c6026146  # The SHA256 hash of the source tarball from PyPI
+
+build:
+  noarch: python  # No architecture-specific files (pure Python)
+  script: python -m pip install .  # Use pip to install the package
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+
+test:
+  imports:
+    - ebltable  # Test if the package can be imported after installation
+
+about:
+  home: https://github.com/me-manu/ebltable  # Link to your package repository
+  summary: "Python code to read in and interpolate tables for absorption of high energy gamma rays with additional helper functions"
+  license: BSD  # The license of your package

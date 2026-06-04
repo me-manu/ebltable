@@ -1,5 +1,4 @@
-from setuptools import setup, find_packages 
-from codecs import open
+from setuptools import setup, find_packages
 from os import path
 
 here = path.abspath(path.dirname(__file__))
@@ -10,7 +9,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='ebltable',
 
-    version="0.6.3",
+    use_scm_version=True,
     include_package_data=True,
     package_data={'ebltable': ['data/*'], },
 

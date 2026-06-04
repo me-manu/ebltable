@@ -246,7 +246,7 @@ class EBL(GridInterpolator):
             Name of EBL model
 
         kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         lmu, z, nuInu= GridInterpolator._read_ascii(file_name)
         return EBL(z, lmu, nuInu, model=model_name, kx=kx, ky=ky, **kwargs)
@@ -294,7 +294,7 @@ class EBL(GridInterpolator):
             Name of EBL model
 
         kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
 
         lmu, z, nuInu = GridInterpolator._read_fits(file_name,

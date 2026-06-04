@@ -44,7 +44,7 @@ class GridInterpolator(object):
             Order of spline interpolation in y direction. Default: 1
 
         kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         kx = kwargs.pop('kx', kx)
         ky = kwargs.pop('ky', ky)

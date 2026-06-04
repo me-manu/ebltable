@@ -41,8 +41,7 @@ Documentation Contents
 
 .. toctree::
    :caption: ebltable Package
-   :includehidden:
-   :maxdepth: 3
+   :maxdepth: 1
 
    module
 

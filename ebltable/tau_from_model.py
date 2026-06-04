@@ -247,7 +247,7 @@ class OptDepth(GridInterpolator):
             order of interpolation spline along energy axis, default: 1
 
         kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         EGeV, z, tau = GridInterpolator._read_ascii(file_name)
         return OptDepth(z, EGeV, tau, kx=kx, ky=ky, **kwargs)

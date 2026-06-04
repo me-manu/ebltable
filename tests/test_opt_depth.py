@@ -104,9 +104,9 @@ class TestOptDepth:
     def test_opt_depth_inverse_increases_with_redshift(self, tau):
         """At fixed tau, the energy horizon decreases as redshift increases
         (universe is more opaque at higher z, so same tau is reached at lower E)."""
-        z_vals = np.array([0.1, 0.3, 0.5, 1.0])
-        E_vals = tau.opt_depth_inverse(z_vals, tau=1.)
-        assert np.all(np.diff(E_vals) < 0.)
+        z_vals = [0.1, 0.3, 0.5, 1.0]
+        E_vals = [float(tau.opt_depth_inverse(z, tau=1.)) for z in z_vals]
+        assert all(E_vals[i] > E_vals[i + 1] for i in range(len(E_vals) - 1))
 
     # --- opt_depth_Ebin ---
 

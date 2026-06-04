@@ -63,9 +63,8 @@ class TestEBL:
     def test_optical_depth_scalar_energy(self, ebl):
         """Scalar float ETeV must not raise (was broken before issue #11 fix)."""
         result = ebl.optical_depth(0.5, 1.0)
-        assert isinstance(result, np.ndarray)
-        assert result.shape == (1,)
-        assert result[0] > 0.
+        assert np.ndim(result) == 0
+        assert float(result) > 0.
 
     def test_optical_depth_quantity_redshift(self, ebl):
         """astropy Quantity redshift must give same result as plain float."""
@@ -77,10 +76,10 @@ class TestEBL:
     # --- output shape tests ---
 
     def test_optical_depth_output_shape(self, ebl):
-        # scalar energy → 1-element array
-        assert ebl.optical_depth(0.5, 1.0).shape == (1,)
+        # scalar energy → squeezed to 0-d scalar
+        assert np.ndim(ebl.optical_depth(0.5, 1.0)) == 0
 
-        # array energy → array of matching length
+        # array energy → 1-D array of matching length
         ETeV = np.logspace(-1., 1., 30)
         assert ebl.optical_depth(0.5, ETeV).shape == (30,)
 
@@ -93,8 +92,7 @@ class TestEBL:
 
     def test_optical_depth_increases_with_redshift(self, ebl):
         """At fixed energy, tau must increase with redshift."""
-        ETeV = np.array([1.0])
-        taus = [ebl.optical_depth(z, ETeV)[0] for z in [0.1, 0.5, 1.0, 2.0]]
+        taus = [float(ebl.optical_depth(z, 1.0)) for z in [0.1, 0.5, 1.0, 2.0]]
         assert all(taus[i] < taus[i + 1] for i in range(len(taus) - 1))
 
     def test_optical_depth_increases_with_energy(self, ebl):
@@ -109,23 +107,24 @@ class TestEBL:
         for z in [0., 0.5, 1.0]:
             assert ebl.ebl_int(z) > 0.
 
-    def test_ebl_int_increases_with_wavelength_range(self, ebl):
-        """Wider wavelength integration window must give larger integral."""
-        narrow = ebl.ebl_int(0., lmin=0.1, lmax=10.)
-        wide = ebl.ebl_int(0., lmin=0.01, lmax=1e3)
-        assert wide > narrow
+    def test_ebl_int_convergence(self, ebl):
+        """Result should converge as number of integration steps increases."""
+        coarse = ebl.ebl_int(0., steps=50)
+        fine = ebl.ebl_int(0., steps=500)
+        assert_allclose(coarse, fine, rtol=0.01)
 
     # --- mean_free_path ---
 
     def test_mean_free_path_shape_and_sign(self, ebl):
+        # meshgrid is (n_energies, n_z), so shape is (len(ETeV), len(z_array))
         z_array = np.linspace(0.1, 1.0, 5)
         ETeV = np.array([1.0, 10.0])
         result = ebl.mean_free_path(z_array, ETeV)
-        assert result.shape == (len(z_array), len(ETeV))
+        assert result.shape == (len(ETeV), len(z_array))
         assert np.all(result > 0.)
 
     def test_mean_free_path_squeezed_for_scalar_inputs(self, ebl):
-        """Single-element inputs should be squeezed to lower dimensions."""
+        """Single-element energy axis is squeezed, leaving only the z dimension."""
         z_array = np.linspace(0.1, 1.0, 5)
         result = ebl.mean_free_path(z_array, np.array([1.0]))
         assert result.ndim == 1

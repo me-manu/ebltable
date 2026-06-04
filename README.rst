@@ -28,10 +28,11 @@ for high energy gamma rays.
 Prerequisites
 -------------
 
-Python 3.5 or higher and the following packages: 
-    - numpy 
-    - scipy
-    - astropy
+Python 3.8 or higher and the following packages:
+
+    - numpy >= 1.19
+    - scipy >= 1.7
+    - astropy >= 4.0
 
 Installation
 ------------

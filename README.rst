@@ -9,6 +9,10 @@ ebltable
     :target: https://github.com/me-manu/ebltable/actions/workflows/python_publish.yml
     :alt: Build
 
+.. image:: https://readthedocs.org/projects/ebltable/badge/?version=latest
+    :target: https://ebltable.readthedocs.io/en/latest/
+    :alt: Documentation
+
 .. image:: https://img.shields.io/github/license/me-manu/ebltable
     :target: https://github.com/me-manu/ebltable
     :alt: License

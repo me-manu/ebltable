@@ -454,8 +454,11 @@ class EBL(GridInterpolator):
         """
         if np.isscalar(ETeV):
             ETeV = np.array([ETeV])
-        elif ETeV is Iterable:
+        elif isinstance(ETeV, Iterable):
             ETeV = np.array(ETeV)
+
+        if isinstance(z0, u.Quantity):
+            z0 = z0.value
 
         z_array = np.linspace(0., z0, steps_z)
         result = self.mean_free_path(z_array, ETeV,
@@ -464,12 +467,16 @@ class EBL(GridInterpolator):
                                      egamma_LIV=egamma_LIV,
                                      steps_e=steps_e)
 
-        zz, ee = np.meshgrid(z_array, ETeV, indexing='ij')
-        result = 1. / (result.T * u.Mpc).to(u.cm).value # this is in cm^-1
+        result = 1. / (result.T * u.Mpc).to(u.cm).value  # this is in cm^-1
         # dt / dz for a flat universe
-        result *= 1. / ((1. + zz) * np.sqrt((1. + zz)**3. * OmegaM + OmegaL) )
+        dtdz = 1. / ((1. + z_array) * np.sqrt((1. + z_array)**3. * OmegaM + OmegaL))
 
-        result = simpson(result, x=zz, axis=0)
+        if result.ndim > 1:
+            dtdz = dtdz[:, np.newaxis]
+
+        result *= dtdz
+
+        result = simpson(result, z_array, axis=0)
 
         # convert from km / Mpc / s to 1 / s
         H0 = (H0 * cosmo.H0.unit).to('1 / s').value

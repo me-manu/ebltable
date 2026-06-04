@@ -7,6 +7,7 @@ The following notebooks demonstrate the main features of ebltable.
 
 .. toctree::
    :maxdepth: 1
+   :titlesonly:
 
    example_ebl
    example_tau

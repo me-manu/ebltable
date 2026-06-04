@@ -61,13 +61,13 @@ class EBL(GridInterpolator):
 
         Parameters
         ----------
-        z: `~numpy.ndarray` or list
+        z: numpy.ndarray or list
             source redshift, m-dimensional
 
-        lmu: `~numpy.ndarray` or list
+        lmu: numpy.ndarray or list
             Wavelengths in micro m
 
-        nuInu: `~numpy.ndarray` or list
+        nuInu: numpy.ndarray or list
             n x m array with EBL photon density in nW / sr / m^2
 
         kx: int
@@ -76,8 +76,8 @@ class EBL(GridInterpolator):
         ky: int
             order of interpolation spline along energy axis, default: 2
 
-        kwargs: dict
-            Additional kwargs passed to `~scipy.interpolate.RectBivariateSpline`
+        **kwargs
+            Additional kwargs passed to :class:`scipy.interpolate.RectBivariateSpline`
         """
         self._model = kwargs.pop('model', None)
         super(EBL, self).__init__(lmu, z, nuInu, logx=True, logZ=True, kx=kx, ky=ky, **kwargs)
@@ -105,19 +105,50 @@ class EBL(GridInterpolator):
         Notes
         -----
         Supported EBL models:
-                Name:                Publication:
-                franceschini        Franceschini et al. (2008)        http://www.astro.unipd.it/background/
-                kneiske                Kneiske & Dole (2010)
-                dominguez        Dominguez et al. (2011)
-                dominguez-upper        Dominguez et al. (2011) upper uncertainty
-                dominguez-lower        Dominguez et al. (2011) lower uncertainty
-                saldana-lopez        Saldana-Lopez et al. (2021) https://www.ucm.es/blazars/ebl
-                saldana-lopez-err    Saldana-Lopez et al. (2021) uncertainties,  https://www.ucm.es/blazars/ebl
-                gilmore                Gilmore et al. (2012)                (fiducial model)
-                gilmore-fixed   Gilmore et al. (2012)                (fixed model)
-                finke                Finke et al. (2012)                (model C) http://www.phy.ohiou.edu/~finke/EBL/
-                finke2022            Finke et al. (2022)                (model A) https://zenodo.org/record/7023073
-                cuba                Haardt & Madua (2012)                http://www.ucolick.org/~pmadau/CUBA/HOME.html
+
+        .. list-table::
+           :header-rows: 1
+           :widths: 25 45 30
+
+           * - Model name
+             - Publication
+             - Notes
+           * - ``franceschini``
+             - `Franceschini et al. (2008) <http://www.astro.unipd.it/background/>`_
+             -
+           * - ``kneiske``
+             - Kneiske & Dole (2010)
+             -
+           * - ``dominguez``
+             - Dominguez et al. (2011)
+             -
+           * - ``dominguez-upper``
+             - Dominguez et al. (2011)
+             - upper uncertainty
+           * - ``dominguez-lower``
+             - Dominguez et al. (2011)
+             - lower uncertainty
+           * - ``saldana-lopez``
+             - `Saldana-Lopez et al. (2021) <https://www.ucm.es/blazars/ebl>`_
+             -
+           * - ``saldana-lopez-err``
+             - `Saldana-Lopez et al. (2021) <https://www.ucm.es/blazars/ebl>`_
+             - uncertainties
+           * - ``gilmore``
+             - Gilmore et al. (2012)
+             - fiducial model
+           * - ``gilmore-fixed``
+             - Gilmore et al. (2012)
+             - fixed model
+           * - ``finke``
+             - `Finke et al. (2010) <http://www.phy.ohiou.edu/~finke/EBL/>`_
+             - model C
+           * - ``finke2022``
+             - `Finke et al. (2022) <https://zenodo.org/record/7023073>`_
+             - model A
+           * - ``cuba``
+             - `Haardt & Madau (2012) <http://www.ucolick.org/~pmadau/CUBA/HOME.html>`_
+             -
         """
         ebl_file_path = os.path.join(os.path.split(__file__)[0],'data/')
 
@@ -320,7 +351,8 @@ class EBL(GridInterpolator):
 
         Returns
         -------
-        (m x n)-dim `~numpy.ndarray` with corresponding (nu I nu) values
+        numpy.ndarray
+            (m x n) array with corresponding nuInu values in nW / m^2 / sr
 
         Notes
         -----
@@ -345,7 +377,8 @@ class EBL(GridInterpolator):
 
         Returns
         -------
-        (N x M)-dim `~numpy.ndarray` with corresponding photon density values
+        numpy.ndarray
+            (N x M) array with corresponding photon density values in 1 / cm^3 / eV
 
         Notes
         -----
@@ -445,12 +478,13 @@ class EBL(GridInterpolator):
 
         Returns
         -------
-        n-dim `~numpy.ndarray` with optical depth values
+        numpy.ndarray
+            n-dim array with optical depth values
 
         Notes
         -----
-        For calculation, see e.g.
-        See Dwek & Krennrich 2013 or Mirizzi & Montanino 2009
+        For the opacity calculation, see Biteau & Williams (2015),
+        `2015ApJ...812...60B <https://ui.adsabs.harvard.edu/abs/2015ApJ...812...60B>`_.
         """
         if np.isscalar(ETeV):
             ETeV = np.array([ETeV])
@@ -507,8 +541,9 @@ class EBL(GridInterpolator):
 
         Returns
         -------
-        mxn-dim `~numpy.ndarray` with mean free path values in Mpc
-        if m or n == 1, the axis will be squeezed, i.e. dropped.
+        numpy.ndarray
+            (m x n) array with mean free path values in Mpc.
+            If m or n == 1, that axis is squeezed.
 
         Notes
         -----
@@ -564,4 +599,4 @@ class EBL(GridInterpolator):
 
         result[result == 0.] = np.ones(np.sum(result == 0.)) * 1e-40
 
-        return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75))*u.cm).to('Mpc').value
+        return np.squeeze((1. / (result * c.sigma_T.to('cm * cm').value * 0.75)) * u.cm).to('Mpc').value

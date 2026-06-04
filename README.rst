@@ -21,9 +21,9 @@ ebltable
     :target: https://github.com/me-manu/ebltable/issues
     :alt: Issues
 
-.. image:: https://zenodo.org/badge/73200740.svg
-   :target: https://zenodo.org/badge/latestdoi/73200740
-   :alt: DOI
+.. image:: https://img.shields.io/badge/DOI-10.5281%2Fzenodo.7312062-blue
+    :target: https://doi.org/10.5281/zenodo.7312062
+    :alt: DOI
 
 Python packages to read in and interpolate tables for the photon density
 of the Extragalactic Background Light (EBL) and the resulting opacity

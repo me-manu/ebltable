@@ -1,27 +1,54 @@
+{% set name = "ebltable" %}
+{% set version = "0.6.4" %}
+
 package:
-  name: ebltable  # Your package name
-  version: "0.6.3"  # Your package version
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/e/ebltable/ebltable-0.6.3.tar.gz
-  sha256: 216943191aa2f2b7580a24d9652ec2ffc752c6a6374a0367e9168cd3c6026146  # The SHA256 hash of the source tarball from PyPI
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 59358cd66c92e6adc8b4ef9be068b881b3ff644943d01d7e7a41b2f2e349d7fa
 
 build:
-  noarch: python  # No architecture-specific files (pure Python)
-  script: python -m pip install .  # Use pip to install the package
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  number: 0
 
 requirements:
   host:
-    - python
+    - python >=3.8
     - pip
+    - setuptools >=45
+    - setuptools-scm >=7
   run:
-    - python
+    - python >=3.8
+    - numpy >=1.19
+    - scipy >=1.7
+    - astropy >=4.0
 
 test:
   imports:
-    - ebltable  # Test if the package can be imported after installation
+    - ebltable
+    - ebltable.ebl_from_model
+    - ebltable.tau_from_model
+  commands:
+    - pip check
+  requires:
+    - pip
 
 about:
-  home: https://github.com/me-manu/ebltable  # Link to your package repository
-  summary: "Python code to read in and interpolate tables for absorption of high energy gamma rays with additional helper functions"
-  license: BSD  # The license of your package
+  home: https://github.com/me-manu/ebltable
+  summary: Python package to read and interpolate EBL photon density tables and compute gamma-ray opacity
+  description: |
+    ebltable provides classes for reading, interpolating, and computing with
+    tables of the Extragalactic Background Light (EBL) photon density and the
+    resulting opacity for high-energy gamma rays. It supports multiple published
+    EBL models and includes support for Lorentz invariance violation corrections.
+  license: BSD-3-Clause
+  license_file: LICENSE
+  doc_url: https://ebltable.readthedocs.io
+  dev_url: https://github.com/me-manu/ebltable
+
+extra:
+  recipe-maintainers:
+    - me-manu

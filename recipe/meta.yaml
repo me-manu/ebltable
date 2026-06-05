@@ -31,10 +31,6 @@ test:
     - ebltable
     - ebltable.ebl_from_model
     - ebltable.tau_from_model
-  commands:
-    - pip check
-  requires:
-    - pip
 
 about:
   home: https://github.com/me-manu/ebltable

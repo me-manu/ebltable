@@ -29,6 +29,8 @@ Python packages to read in and interpolate tables for the photon density
 of the Extragalactic Background Light (EBL) and the resulting opacity
 for high energy gamma rays.
 
+The full documentation is available at https://ebltable.readthedocs.io/en/latest/.
+
 Prerequisites
 -------------
 
